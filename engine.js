@@ -1,4 +1,4 @@
-// engine.js - VERSI CANVAS (v12) - FIX BERANDA & ROUTING
+// engine.js - VERSI CANVAS (v13) - SUPPORT FULL HTML & JAVASCRIPT
 
 const SHEET_ID = '15_W4a5iyC7zhjvoTVVNNnK-_nxGFbKty2onOukyL76A';
 
@@ -24,12 +24,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         let currentPath = window.location.pathname.replace(/\/$/, '');
-        
         let isHome = currentPath === '' || currentPath === '/' || currentPath === '/index.html';
         let isBlogList = currentPath === '/blog';
         let isPostDetail = currentPath.startsWith('/blog/');
         
-        // Selalu tarik semua data agar fleksibel
         const results = await Promise.all([
             fetchSheet('Settings'),
             fetchSheet('Posts'),
@@ -53,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const todayStr = new Date().toLocaleDateString('id-ID', dateOptions);
         let homePageSlug = s.home_page || '';
 
-        // --- KOMPONEN HEADER & FOOTER ---
+        // --- KOMPONEN HEADER & FOOTER UNTUK BLOG ---
         const htmlTop = `
             <style>.headline-card:hover img { transform: scale(1.05); } .headline-card img { transition: transform 0.5s ease; }</style>
             <div class="bg-slate-900 text-slate-300 text-xs py-2 hidden md:block">
@@ -128,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <img src="${safeImg(posts[i][4])}" class="w-full h-full object-cover group-hover:scale-105 transition-all">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
                             <div class="absolute bottom-0 p-5 w-full">
-                                <span class="text-emerald-400 text-[10px] font-black uppercase mb-1 block">${posts[i][3] || 'Berita'}</span>
+                                <span class="text-emerald-400 text-[10px] font-black uppercase mb-1 block">${posts[i][3] || 'Ekonomi'}</span>
                                 <h3 class="text-lg font-bold text-white leading-tight line-clamp-2">${posts[i][2]}</h3>
                             </div>
                         </a>` : '').join('')}
@@ -155,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div class="space-y-5">
                                 ${popular.map((p, idx) => `<a href="/blog/${p[1]}" class="flex gap-4 group">
                                     <div class="text-4xl font-black text-slate-200 group-hover:text-rose-500">${idx+1}</div>
-                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4><span class="text-[10px] text-slate-400 uppercase">${p[3]||'Info'}</span></div>
+                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4><span class="text-[10px] text-slate-400 uppercase">${p[3]||'Nasional'}</span></div>
                                 </a>`).join('')}
                             </div>
                         </div>
@@ -168,28 +166,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // --- ROUTING KONDISIONAL ---
-        
         if (isHome) {
             if (homePageSlug) {
-                // JIKA ADMIN SET BERANDA: Render halaman spesifik dari Tab Pages
                 const page = pagesData.find(p => p[1] === homePageSlug);
                 if (page) {
                     document.title = `${page[2]} - ${siteName}`;
                     showCanvas(page[3]);
-                } else {
-                    // Jika slug tidak ditemukan, render portal berita
-                    renderPortalBerita();
-                }
-            } else {
-                // JIKA KOSONG: Default render portal berita
-                renderPortalBerita();
-            }
+                } else { renderPortalBerita(); }
+            } else { renderPortalBerita(); }
         } 
-        else if (isBlogList) {
-            renderPortalBerita();
-        } 
+        else if (isBlogList) { renderPortalBerita(); } 
         else if (isPostDetail) {
-            // RENDER BACA ARTIKEL
             const slug = currentPath.split('/')[2];
             const post = postsData.find(p => p[1] === slug);
             if (post) {
@@ -218,29 +205,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div></main>` + htmlFooter;
                 showCanvas(html);
             } else { showError(); }
-
         } else {
-            // RENDER HALAMAN STATIS LAINNYA
             const slug = currentPath.substring(1);
             const page = pagesData.find(p => p[1] === slug);
             if (page) { 
                 document.title = `${page[2]} - ${siteName}`;
                 showCanvas(page[3]); 
-            } else { 
-                showError(); 
-            }
+            } else { showError(); }
         }
 
     } catch (error) { console.error(error); showError(); }
 
+    // ============================================================
+    // FUNGSI RENDER (DIPERBARUI UNTUK MENDUKUNG FULL HTML)
+    // ============================================================
     function showCanvas(htmlContent) {
         spinner.classList.add('opacity-0');
         setTimeout(() => {
             spinner.classList.add('hidden');
-            appCanvas.innerHTML = htmlContent;
+            
+            // Cek apakah konten mengandung Full HTML Document (Landing Page/Canvas Elementor)
+            const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
+
+            if (isFullDocument) {
+                // Trik Sakti: Tambahkan tag <base> agar jika ada tombol diklik, navigasinya pindah ke halaman utama, bukan di dalam kotak
+                let iframeHtml = htmlContent;
+                if (!iframeHtml.includes('<base target=')) {
+                    iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
+                }
+
+                // Bersihkan layar dan pasang Kaca Transparan (iFrame) berukuran 100% layar
+                appCanvas.innerHTML = ''; 
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '100vh'; // Full tinggi layar
+                iframe.style.border = 'none';
+                appCanvas.appendChild(iframe);
+                
+                // Suntikkan kode HTML Bos ke dalam iFrame
+                iframe.contentWindow.document.open();
+                iframe.contentWindow.document.write(iframeHtml);
+                iframe.contentWindow.document.close();
+            } else {
+                // Jika hanya artikel/potongan berita biasa
+                appCanvas.innerHTML = htmlContent;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
             appCanvas.classList.remove('hidden');
             setTimeout(() => appCanvas.classList.remove('opacity-0'), 50); 
-            if (typeof lucide !== 'undefined') lucide.createIcons();
         }, 300);
     }
 
