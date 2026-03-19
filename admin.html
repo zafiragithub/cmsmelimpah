@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpotAdmin - CMS & Blog</title>
     
-    <script src="config.js?v=2"></script>
+    <script src="config.js?v=13"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script> 
@@ -66,7 +66,6 @@
             <nav class="p-6 space-y-2 flex-1 overflow-y-auto custom-scroll">
                 <button onclick="switchTab('pages')" id="nav-pages" class="nav-item active w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="file-text" class="w-5 h-5"></i> Halaman Statis</button>
                 <button onclick="switchTab('posts')" id="nav-posts" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="pen-tool" class="w-5 h-5"></i> Artikel / Blog</button>
-                
                 <button onclick="switchTab('media')" id="nav-media" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="image" class="w-5 h-5"></i> Media Center</button>
                 <button onclick="switchTab('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm border-t border-slate-800 pt-8 mt-5"><i data-lucide="settings" class="w-5 h-5"></i> Pengaturan Web</button>
             </nav>
@@ -148,6 +147,7 @@
                             <div class="border-t border-slate-100 pt-6">
                                 <label class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest ml-2 mb-2 block">Pilih Halaman Beranda Utama</label>
                                 <select id="set-home-page" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl outline-none font-bold text-indigo-700"></select>
+                                <p class="text-[10px] text-slate-400 mt-2 ml-2 italic">*Pilih "Portal Berita (Bawaan)" agar halaman utama menampilkan daftar artikel otomatis.</p>
                             </div>
                             <button type="submit" class="w-full bg-slate-900 text-white p-5 rounded-xl font-black uppercase text-xs hover:bg-slate-800 transition-colors mt-2">Simpan Branding</button>
                         </form>
@@ -267,7 +267,8 @@
         document.getElementById('form-login').onsubmit = async (e) => { 
             e.preventDefault(); 
             const btn = document.getElementById('btn-login'); const oriText = btn.innerHTML;
-            btn.innerHTML = 'LOADING...'; btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>LOADING...'; 
+            btn.disabled = true; lucide.createIcons();
             try { 
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'admin_login', email: document.getElementById('adm-email').value, password: document.getElementById('adm-pass').value })}); 
                 const r = await res.json(); 
@@ -285,7 +286,6 @@
             document.getElementById('count-pages').innerText = cachedPages.length;
             document.getElementById('count-posts').innerText = cachedPosts.length;
             
-            // Render Tabel Halaman
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td><td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td><td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
@@ -296,7 +296,6 @@
                 </td>
             </tr>`).join('');
 
-            // Render Tabel Blog/Posts
             document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
@@ -309,7 +308,6 @@
                 </td>
             </tr>`).join('');
 
-            // Setingan
             const s = r.settings || {};
             document.getElementById('set-site-name').value = s.site_name || ''; 
             document.getElementById('set-site-tagline').value = s.site_tagline || ''; 
@@ -320,8 +318,8 @@
             document.getElementById('set-cf-zone').value = s.cf_zone_id || ''; 
             document.getElementById('set-cf-token').value = s.cf_api_token || '';
 
-            // Dropdown Home Page
-            document.getElementById('set-home-page').innerHTML = '<option value="">-- Pilih Halaman --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
+            // DROPDOWN FIX: Opsi Default diganti jadi Portal Berita
+            document.getElementById('set-home-page').innerHTML = '<option value="">-- Portal Berita (Bawaan) --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
             document.getElementById('set-home-page').value = s.home_page || ''; 
             
             lucide.createIcons();
@@ -345,7 +343,6 @@
 
         function forceSync() { localStorage.removeItem(CACHE_KEY); showToast('Menyegarkan data...', 'warning'); init(); }
 
-        // --- HELPER EDITOR ---
         function insertAtCursor(id, val) {
             const f = document.getElementById(id);
             if (f.selectionStart || f.selectionStart === 0) {
@@ -363,21 +360,20 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function logout() { sessionStorage.clear(); localStorage.removeItem(CACHE_KEY); location.reload(); }
 
-        // --- CRUD PAGES ---
+        // CRUD PAGES & POSTS
         function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[1]; document.getElementById('pg-title').value = p[2]; document.getElementById('pg-content').value = p[3]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
         async function deletePage(id) { if(!confirm("Yakin hapus halaman?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-page').onsubmit = async (e) => { 
-            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = 'PROSES...'; btn.disabled = true;
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
             let id = document.getElementById('pg-id').value || 'PG-' + Math.floor(Math.random()*10000);
             const p = { action: 'save_page', id: id, slug: document.getElementById('pg-slug').value, title: document.getElementById('pg-title').value, content: document.getElementById('pg-content').value, is_edit: document.getElementById('pg-is-edit').value === 'true' }; 
             try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-page'); showToast('Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        // --- CRUD POSTS ---
         function editPost(id) { const p = cachedPosts.find(x => x[0] === id); if(!p) return; document.getElementById('pt-id').value = p[0]; document.getElementById('pt-slug').value = p[1]; document.getElementById('pt-title').value = p[2]; document.getElementById('pt-category').value = p[3]; document.getElementById('pt-image').value = p[4]; document.getElementById('pt-content').value = p[5]; document.getElementById('pt-is-edit').value = 'true'; document.getElementById('modal-post').classList.remove('hidden'); }
         async function deletePost(id) { if(!confirm("Yakin hapus artikel?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_post', id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-post').onsubmit = async (e) => { 
-            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = 'PROSES...'; btn.disabled = true;
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
             let id = document.getElementById('pt-id').value || 'PT-' + Math.floor(Math.random()*10000);
             const p = { action: 'save_post', id: id, slug: document.getElementById('pt-slug').value, title: document.getElementById('pt-title').value, category: document.getElementById('pt-category').value, image: document.getElementById('pt-image').value, content: document.getElementById('pt-content').value, is_edit: document.getElementById('pt-is-edit').value === 'true' }; 
             try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-post'); showToast('Artikel Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
@@ -389,7 +385,6 @@
             const btn = form.querySelector('button[type="submit"]');
             const oriText = btn.innerHTML;
             
-            // Ubah tombol jadi loading
             btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; 
             btn.disabled = true; 
             lucide.createIcons();
@@ -406,7 +401,6 @@
             } catch(err) { 
                 showToast('Koneksi terputus', 'error'); 
             } finally { 
-                // Kembalikan tombol ke semula
                 btn.innerHTML = oriText; 
                 btn.disabled = false; 
             } 
