@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpotAdmin - Lite CMS</title>
+    <title>SpotAdmin - CMS & Blog</title>
     
-    <script src="config.js?v=1"></script>
+    <script src="config.js?v=2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script> 
@@ -48,20 +48,8 @@
             </div>
             <div class="md:w-7/12 p-10 md:p-14 bg-white">
                 <form id="form-login" class="space-y-6">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Admin</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-5 flex items-center text-slate-400"><i data-lucide="mail" class="w-5 h-5"></i></div>
-                            <input type="email" id="adm-email" class="w-full pl-14 p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-400 font-bold" required>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-5 flex items-center text-slate-400"><i data-lucide="lock" class="w-5 h-5"></i></div>
-                            <input type="password" id="adm-pass" class="w-full pl-14 pr-14 p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-400 font-bold" required>
-                        </div>
-                    </div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Admin</label><div class="relative"><div class="absolute inset-y-0 left-0 pl-5 flex items-center text-slate-400"><i data-lucide="mail" class="w-5 h-5"></i></div><input type="email" id="adm-email" class="w-full pl-14 p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-400 font-bold" required></div></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label><div class="relative"><div class="absolute inset-y-0 left-0 pl-5 flex items-center text-slate-400"><i data-lucide="lock" class="w-5 h-5"></i></div><input type="password" id="adm-pass" class="w-full pl-14 pr-14 p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-400 font-bold" required></div></div>
                     <button type="submit" id="btn-login" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all uppercase text-xs mt-4">Masuk Panel</button>
                 </form>
             </div>
@@ -76,7 +64,9 @@
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <nav class="p-6 space-y-2 flex-1 overflow-y-auto custom-scroll">
-                <button onclick="switchTab('pages')" id="nav-pages" class="nav-item active w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="file-text" class="w-5 h-5"></i> Halaman CMS</button>
+                <button onclick="switchTab('pages')" id="nav-pages" class="nav-item active w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="file-text" class="w-5 h-5"></i> Halaman Statis</button>
+                <button onclick="switchTab('posts')" id="nav-posts" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="pen-tool" class="w-5 h-5"></i> Artikel / Blog</button>
+                
                 <button onclick="switchTab('media')" id="nav-media" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm"><i data-lucide="image" class="w-5 h-5"></i> Media Center</button>
                 <button onclick="switchTab('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 p-4 font-bold text-sm border-t border-slate-800 pt-8 mt-5"><i data-lucide="settings" class="w-5 h-5"></i> Pengaturan Web</button>
             </nav>
@@ -90,7 +80,7 @@
             <header class="flex justify-between items-center mb-8 sticky top-0 bg-[#f8f9fa]/80 backdrop-blur-md py-4 z-30">
                 <div class="flex items-center gap-4">
                     <button onclick="toggleSidebar()" class="md:hidden p-3 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-600"><i data-lucide="menu" class="w-6 h-6"></i></button>
-                    <h2 id="tab-title" class="text-xl md:text-3xl font-black text-slate-800 uppercase tracking-tight">Halaman CMS</h2>
+                    <h2 id="tab-title" class="text-xl md:text-3xl font-black text-slate-800 uppercase tracking-tight">Halaman Statis</h2>
                 </div>
                 <div class="flex items-center gap-3 md:gap-4 bg-white p-2 rounded-2xl border shadow-sm px-4">
                     <span id="sync-status" class="text-[8px] md:text-[10px] bg-slate-100 text-slate-400 px-2 md:px-3 py-1 rounded-full hidden animate-pulse font-bold tracking-widest uppercase">Sync...</span>
@@ -100,25 +90,31 @@
             </header>
 
             <div id="tab-pages" class="tab-content active">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                    <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-bold text-xs border border-indigo-100">
-                        Total Halaman: <span id="count-pages">0</span>
-                    </div>
-                    <button onclick="openPageModal()" class="w-full sm:w-auto bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:-translate-y-1 transition-all text-xs uppercase tracking-widest">
-                        + Buat Halaman Baru
-                    </button>
+                <div class="flex justify-between items-center gap-4 mb-8">
+                    <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-bold text-xs border border-indigo-100">Total Halaman: <span id="count-pages">0</span></div>
+                    <button onclick="openPageModal()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:-translate-y-1 transition-all text-xs uppercase">+ Halaman</button>
                 </div>
                 <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-x-auto custom-scroll">
                     <table class="w-full text-left text-sm min-w-[600px] table-fixed">
                         <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-                            <tr>
-                                <th class="p-6 w-[30%]">Judul Halaman</th>
-                                <th class="p-6 w-[25%]">URL Permalinks</th>
-                                <th class="p-6 w-[20%]">Tgl Dibuat</th>
-                                <th class="p-6 w-[25%] text-right">Aksi</th>
-                            </tr>
+                            <tr><th class="p-6 w-[30%]">Judul</th><th class="p-6 w-[25%]">URL Permalinks</th><th class="p-6 w-[20%]">Tgl Dibuat</th><th class="p-6 w-[25%] text-right">Aksi</th></tr>
                         </thead>
                         <tbody id="list-pages" class="divide-y text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-posts" class="tab-content">
+                <div class="flex justify-between items-center gap-4 mb-8">
+                    <div class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg font-bold text-xs border border-emerald-100">Total Artikel: <span id="count-posts">0</span></div>
+                    <button onclick="openPostModal()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 hover:-translate-y-1 transition-all text-xs uppercase">+ Tulis Artikel</button>
+                </div>
+                <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-x-auto custom-scroll">
+                    <table class="w-full text-left text-sm min-w-[700px] table-fixed">
+                        <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
+                            <tr><th class="p-6 w-[35%]">Judul Artikel</th><th class="p-6 w-[20%]">Kategori</th><th class="p-6 w-[20%]">Tgl Dibuat</th><th class="p-6 w-[25%] text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody id="list-posts" class="divide-y text-slate-700"></tbody>
                     </table>
                 </div>
             </div>
@@ -161,16 +157,8 @@
                         <form id="form-sys" class="space-y-6">
                             <div><label class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest ml-2 mb-2 block">ImageKit Public Key</label><input type="text" id="set-ik-pub" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl outline-none font-mono text-xs"></div>
                             <div><label class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest ml-2 mb-2 block">ImageKit Endpoint URL</label><input type="text" id="set-ik-end" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl outline-none font-mono text-xs"></div>
-                            
-                            <div class="border-t border-slate-100 pt-6 mt-6">
-                                <label class="text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-2 mb-2 block">Cloudflare Zone ID</label>
-                                <input type="text" id="set-cf-zone" class="w-full p-4 bg-amber-50 border border-amber-100 rounded-xl outline-none font-mono text-xs">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-2 mb-2 block">Cloudflare API Token</label>
-                                <input type="password" id="set-cf-token" class="w-full p-4 bg-amber-50 border border-amber-100 rounded-xl outline-none font-mono text-xs">
-                            </div>
-
+                            <div class="border-t border-slate-100 pt-6 mt-6"><label class="text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-2 mb-2 block">Cloudflare Zone ID</label><input type="text" id="set-cf-zone" class="w-full p-4 bg-amber-50 border border-amber-100 rounded-xl outline-none font-mono text-xs"></div>
+                            <div><label class="text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-2 mb-2 block">Cloudflare API Token</label><input type="password" id="set-cf-token" class="w-full p-4 bg-amber-50 border border-amber-100 rounded-xl outline-none font-mono text-xs"></div>
                             <button type="submit" class="w-full bg-indigo-600 text-white p-5 rounded-xl font-black uppercase text-xs hover:bg-indigo-700 transition-colors mt-2">Update Integrasi</button>
                         </form>
                     </div>
@@ -181,52 +169,71 @@
 
     <div id="modal-page" class="fixed inset-0 bg-slate-900/80 hidden z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-5xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl max-h-[95vh] overflow-y-auto custom-scroll">
-            <h3 class="text-2xl font-black mb-6 italic text-slate-800">Editor Halaman</h3>
+            <h3 class="text-2xl font-black mb-6 italic text-slate-800">Editor Halaman Statis</h3>
             <form id="form-page" class="space-y-4">
                 <input type="hidden" id="pg-id">
                 <input type="hidden" id="pg-is-edit">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Judul Halaman</label>
-                        <input type="text" id="pg-title" placeholder="Contoh: Tentang Kami" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">URL Slug (Permalink)</label>
-                        <input type="text" id="pg-slug" placeholder="Contoh: tentang-kami" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none font-mono font-bold text-indigo-600 focus:border-indigo-500 transition-all" required>
-                    </div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Judul Halaman</label><input type="text" id="pg-title" placeholder="Contoh: Tentang Kami" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold focus:border-indigo-500" required></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">URL Slug</label><input type="text" id="pg-slug" placeholder="Contoh: tentang-kami" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none font-mono font-bold text-indigo-600 focus:border-indigo-500" required></div>
                 </div>
-                
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-2"><i data-lucide="code" class="w-3 h-3"></i> HTML Content</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">HTML Content</label>
                     <div class="flex flex-wrap gap-2 p-3 bg-slate-100 border border-slate-200 rounded-t-xl border-b-0">
-                        <button type="button" onclick="insertAtCursor('pg-content', '<h2>Subjudul</h2>\n')" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm">H2</button>
-                        <button type="button" onclick="insertAtCursor('pg-content', '<p>Tulis paragraf...</p>\n')" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm">Paragraf</button>
-                        <button type="button" onclick="insertAtCursor('pg-content', '<b>Tebal</b>')" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm">Bold</button>
-                        <div class="flex items-center gap-2 ml-auto">
-                            <button type="button" onclick="insertAtCursor('pg-content', '<a href=\'URL\'>Link</a>')" class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200">+ Link</button>
-                            <button type="button" onclick="insertAtCursor('pg-content', '<img src=\'URL\' class=\'w-full rounded-xl my-4\'>\n')" class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-200">+ Gambar</button>
-                        </div>
+                        <button type="button" onclick="insertAtCursor('pg-content', '<h2>Subjudul</h2>\n')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold text-slate-700 shadow-sm">H2</button>
+                        <button type="button" onclick="insertAtCursor('pg-content', '<p>Tulis paragraf...</p>\n')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold text-slate-700 shadow-sm">Paragraf</button>
+                        <button type="button" onclick="insertAtCursor('pg-content', '<b>Tebal</b>')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold text-slate-700 shadow-sm">Bold</button>
+                        <button type="button" onclick="insertAtCursor('pg-content', '<img src=\'URL\' class=\'w-full rounded-xl my-4\'>\n')" class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold ml-auto">+ Gambar</button>
                     </div>
-                    <textarea id="pg-content" rows="14" placeholder="Ketik HTML di sini..." class="w-full p-6 bg-slate-50 border border-slate-200 rounded-b-xl font-mono text-xs custom-scroll outline-none focus:border-indigo-500 focus:bg-white transition-colors"></textarea>
+                    <textarea id="pg-content" rows="12" class="w-full p-6 bg-slate-50 border border-slate-200 rounded-b-xl font-mono text-xs custom-scroll outline-none focus:border-indigo-500 focus:bg-white"></textarea>
+                </div>
+                <div class="flex justify-end gap-4 pt-6 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-page')" class="py-4 px-6 font-bold text-slate-400">BATAL</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black text-xs uppercase">Simpan Halaman</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-post" class="fixed inset-0 bg-slate-900/80 hidden z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-5xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl max-h-[95vh] overflow-y-auto custom-scroll">
+            <h3 class="text-2xl font-black mb-6 italic text-slate-800">Tulis Artikel Baru</h3>
+            <form id="form-post" class="space-y-4">
+                <input type="hidden" id="pt-id">
+                <input type="hidden" id="pt-is-edit">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Judul Artikel</label><input type="text" id="pt-title" placeholder="Cara Membuat Web..." class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-bold" required></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">URL Slug</label><input type="text" id="pt-slug" placeholder="cara-membuat-web" class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-mono font-bold text-indigo-600" required></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Kategori</label><input type="text" id="pt-category" placeholder="Teknologi" class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-bold"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Thumbnail Cover URL (Opsional)</label><input type="text" id="pt-image" placeholder="https://..." class="w-full p-4 bg-slate-50 border rounded-xl outline-none text-sm"></div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('modal-page')" class="py-4 px-6 font-bold text-slate-400 hover:text-slate-600 transition-colors">BATAL</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-xl font-black shadow-lg shadow-indigo-200 text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Simpan Halaman</button>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">HTML Isi Artikel</label>
+                    <div class="flex flex-wrap gap-2 p-3 bg-slate-100 border border-slate-200 rounded-t-xl border-b-0">
+                        <button type="button" onclick="insertAtCursor('pt-content', '<h2>Subjudul</h2>\n')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold shadow-sm">H2</button>
+                        <button type="button" onclick="insertAtCursor('pt-content', '<p>Tulis paragraf...</p>\n')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold shadow-sm">Paragraf</button>
+                        <button type="button" onclick="insertAtCursor('pt-content', '<b>Tebal</b>')" class="px-4 py-2 bg-white rounded-lg text-xs font-bold shadow-sm">Bold</button>
+                        <button type="button" onclick="insertAtCursor('pt-content', '<img src=\'URL\' class=\'w-full rounded-xl my-4\'>\n')" class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold ml-auto">+ Gambar</button>
+                    </div>
+                    <textarea id="pt-content" rows="10" class="w-full p-6 bg-slate-50 border border-slate-200 rounded-b-xl font-mono text-xs custom-scroll outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-4 pt-6 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modal-post')" class="py-4 px-6 font-bold text-slate-400">BATAL</button>
+                    <button type="submit" class="bg-emerald-600 text-white px-10 py-4 rounded-xl font-black text-xs uppercase hover:bg-emerald-700">Publish Artikel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Gunakan SCRIPT_URL dari config, atau panggil API proxy di Cloudflare (karena _worker.js mengarah ke /api)
-        // Jika testing lokal tanpa cloudflare, gunakan SCRIPT_URL langsung.
-        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-                        ? SCRIPT_URL 
-                        : '/api'; // Ini agar aman saat di production
-
+        const API_URL = SCRIPT_URL;
         const CACHE_KEY = 'cms_admin_data';
         let cachedPages = []; 
+        let cachedPosts = [];
         let IK_PUB = '';
 
         function showToast(message, type = 'success') {
@@ -252,7 +259,7 @@
             document.getElementById('tab-'+t).classList.add('active'); 
             document.getElementById('nav-'+t).classList.add('active'); 
             
-            let titles = { 'pages': 'Halaman CMS', 'media': 'Media Center', 'settings': 'Pengaturan Web' };
+            let titles = { 'pages': 'Halaman Statis', 'posts': 'Artikel / Blog', 'media': 'Media Center', 'settings': 'Pengaturan Web' };
             document.getElementById('tab-title').innerText = titles[t]; 
             if(window.innerWidth < 768) toggleSidebar(); 
         }
@@ -273,18 +280,32 @@
 
         function renderUI(r) {
             cachedPages = r.pages || [];
+            cachedPosts = r.posts || [];
+            
             document.getElementById('count-pages').innerText = cachedPages.length;
+            document.getElementById('count-posts').innerText = cachedPosts.length;
             
             // Render Tabel Halaman
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
-                <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
-                <td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td>
-                <td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
+                <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td><td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td><td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
                 <td class="p-4 md:p-6 text-right flex justify-end gap-2">
-                    <button onclick="window.open('/${p[1]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl transition-colors shadow-sm" title="Preview"><i data-lucide="external-link" class="w-4 h-4"></i></button>
-                    <button onclick="editPage('${p[0]}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white p-2.5 rounded-xl transition-colors shadow-sm" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
-                    <button onclick="deletePage('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl transition-colors shadow-sm" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="window.open('/${p[1]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="editPage('${p[0]}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button onclick="deletePage('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </td>
+            </tr>`).join('');
+
+            // Render Tabel Blog/Posts
+            document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
+            <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
+                <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
+                <td class="p-4 md:p-6 font-bold text-emerald-600"><span class="bg-emerald-50 px-3 py-1 rounded-full text-[10px]">${p[3]||'-'}</span></td>
+                <td class="p-4 md:p-6 text-slate-500 text-xs">${p[6] || '-'}</td>
+                <td class="p-4 md:p-6 text-right flex justify-end gap-2">
+                    <button onclick="window.open('/blog/${p[1]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="editPost('${p[0]}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button onclick="deletePost('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </td>
             </tr>`).join('');
 
@@ -300,9 +321,8 @@
             document.getElementById('set-cf-token').value = s.cf_api_token || '';
 
             // Dropdown Home Page
-            const homeSelect = document.getElementById('set-home-page');
-            homeSelect.innerHTML = '<option value="">-- Pilih Halaman --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
-            homeSelect.value = s.home_page || ''; 
+            document.getElementById('set-home-page').innerHTML = '<option value="">-- Pilih Halaman --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
+            document.getElementById('set-home-page').value = s.home_page || ''; 
             
             lucide.createIcons();
         }
@@ -319,105 +339,55 @@
             try { 
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_admin_data' }) }); 
                 const r = await res.json(); 
-                if(r.status === 'success') { 
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(r.data)); 
-                    renderUI(r.data); 
-                } 
-            } catch (err) { console.error(err); }
+                if(r.status === 'success') { localStorage.setItem(CACHE_KEY, JSON.stringify(r.data)); renderUI(r.data); } 
+            } catch (err) {}
         }
 
-        function forceSync() { 
-            localStorage.removeItem(CACHE_KEY); 
-            showToast('Menyegarkan data...', 'warning');
-            init(); 
-        }
+        function forceSync() { localStorage.removeItem(CACHE_KEY); showToast('Menyegarkan data...', 'warning'); init(); }
 
-        // --- EDITOR FUNGSI ---
+        // --- HELPER EDITOR ---
         function insertAtCursor(id, val) {
             const f = document.getElementById(id);
             if (f.selectionStart || f.selectionStart === 0) {
-                let start = f.selectionStart, end = f.selectionEnd;
-                f.value = f.value.substring(0, start) + val + f.value.substring(end);
-                f.focus(); f.selectionStart = start + val.length; f.selectionEnd = start + val.length;
+                let s = f.selectionStart, e = f.selectionEnd;
+                f.value = f.value.substring(0, s) + val + f.value.substring(e);
+                f.focus(); f.selectionStart = s + val.length; f.selectionEnd = s + val.length;
             } else { f.value += val; f.focus(); }
         }
 
-        document.getElementById('pg-title').addEventListener('keyup', function() { 
-            if(document.getElementById('pg-is-edit').value === 'false') { 
-                document.getElementById('pg-slug').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''); 
-            } 
-        });
+        document.getElementById('pg-title').addEventListener('keyup', function() { if(document.getElementById('pg-is-edit').value === 'false') document.getElementById('pg-slug').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''); });
+        document.getElementById('pt-title').addEventListener('keyup', function() { if(document.getElementById('pt-is-edit').value === 'false') document.getElementById('pt-slug').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''); });
 
         function openPageModal() { document.getElementById('form-page').reset(); document.getElementById('pg-is-edit').value = 'false'; document.getElementById('modal-page').classList.remove('hidden'); }
+        function openPostModal() { document.getElementById('form-post').reset(); document.getElementById('pt-is-edit').value = 'false'; document.getElementById('modal-post').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function logout() { sessionStorage.clear(); localStorage.removeItem(CACHE_KEY); location.reload(); }
 
-        function editPage(id) { 
-            const p = cachedPages.find(x => x[0] === id); 
-            if(!p) return; 
-            document.getElementById('pg-id').value = p[0]; 
-            document.getElementById('pg-slug').value = p[1]; 
-            document.getElementById('pg-title').value = p[2]; 
-            document.getElementById('pg-content').value = p[3]; 
-            document.getElementById('pg-is-edit').value = 'true'; 
-            document.getElementById('modal-page').classList.remove('hidden'); 
-        }
-
-        async function deletePage(id) {
-            if(!confirm("Yakin ingin menghapus halaman ini permanen?")) return;
-            try { 
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', id: id}) }); 
-                const data = await res.json(); 
-                if(data.status === 'success') { showToast('Hapus sukses!', 'success'); forceSync(); } 
-            } catch(e) { showToast('Error koneksi', 'error'); }
-        }
-
+        // --- CRUD PAGES ---
+        function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[1]; document.getElementById('pg-title').value = p[2]; document.getElementById('pg-content').value = p[3]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
+        async function deletePage(id) { if(!confirm("Yakin hapus halaman?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-page').onsubmit = async (e) => { 
-            e.preventDefault(); 
-            const btn = document.querySelector('#form-page button[type="submit"]'); const ori = btn.innerHTML;
-            btn.innerHTML = 'PROSES...'; btn.disabled = true;
-            
-            let p_id = document.getElementById('pg-id').value;
-            if(!p_id) p_id = 'PG-' + Math.floor(Math.random()*10000);
-
-            const p = { 
-                action: 'save_page', id: p_id, 
-                slug: document.getElementById('pg-slug').value, 
-                title: document.getElementById('pg-title').value, 
-                content: document.getElementById('pg-content').value, 
-                is_edit: document.getElementById('pg-is-edit').value === 'true' 
-            }; 
-            
-            try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
-                const data = await res.json();
-                if(data.status === 'success') { closeModal('modal-page'); showToast('Halaman disimpan!', 'success'); forceSync(); } 
-                else { showToast(data.message, 'error'); }
-            } catch(err) { showToast('Koneksi terputus', 'error'); } finally { btn.innerHTML = ori; btn.disabled = false; }
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = 'PROSES...'; btn.disabled = true;
+            let id = document.getElementById('pg-id').value || 'PG-' + Math.floor(Math.random()*10000);
+            const p = { action: 'save_page', id: id, slug: document.getElementById('pg-slug').value, title: document.getElementById('pg-title').value, content: document.getElementById('pg-content').value, is_edit: document.getElementById('pg-is-edit').value === 'true' }; 
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-page'); showToast('Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        // --- PENGATURAN FUNGSI ---
-        async function submitSettings(payload, msg) {
-            try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', payload: payload }) });
-                const data = await res.json();
-                if(data.status === 'success') { showToast(msg, 'success'); forceSync(); } 
-            } catch(err) { showToast('Koneksi terputus', 'error'); }
-        }
-
-        document.getElementById('form-branding').onsubmit = async (e) => { 
-            e.preventDefault(); 
-            const p = { site_name: document.getElementById('set-site-name').value, site_tagline: document.getElementById('set-site-tagline').value, site_logo: document.getElementById('set-logo').value, site_favicon: document.getElementById('set-favicon').value, home_page: document.getElementById('set-home-page').value }; 
-            await submitSettings(p, 'Branding & Beranda Disimpan!');
+        // --- CRUD POSTS ---
+        function editPost(id) { const p = cachedPosts.find(x => x[0] === id); if(!p) return; document.getElementById('pt-id').value = p[0]; document.getElementById('pt-slug').value = p[1]; document.getElementById('pt-title').value = p[2]; document.getElementById('pt-category').value = p[3]; document.getElementById('pt-image').value = p[4]; document.getElementById('pt-content').value = p[5]; document.getElementById('pt-is-edit').value = 'true'; document.getElementById('modal-post').classList.remove('hidden'); }
+        async function deletePost(id) { if(!confirm("Yakin hapus artikel?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_post', id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
+        document.getElementById('form-post').onsubmit = async (e) => { 
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = 'PROSES...'; btn.disabled = true;
+            let id = document.getElementById('pt-id').value || 'PT-' + Math.floor(Math.random()*10000);
+            const p = { action: 'save_post', id: id, slug: document.getElementById('pt-slug').value, title: document.getElementById('pt-title').value, category: document.getElementById('pt-category').value, image: document.getElementById('pt-image').value, content: document.getElementById('pt-content').value, is_edit: document.getElementById('pt-is-edit').value === 'true' }; 
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-post'); showToast('Artikel Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        document.getElementById('form-sys').onsubmit = async (e) => { 
-            e.preventDefault(); 
-            const p = { ik_public_key: document.getElementById('set-ik-pub').value, ik_endpoint: document.getElementById('set-ik-end').value, cf_zone_id: document.getElementById('set-cf-zone').value, cf_api_token: document.getElementById('set-cf-token').value }; 
-            await submitSettings(p, 'Integrasi Sistem Disimpan!');
-        };
+        // --- SETTINGS ---
+        async function submitSettings(p, msg) { try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', payload: p }) }); const d = await res.json(); if(d.status === 'success') { showToast(msg, 'success'); forceSync(); } } catch(err) {} }
+        document.getElementById('form-branding').onsubmit = async (e) => { e.preventDefault(); const p = { site_name: document.getElementById('set-site-name').value, site_tagline: document.getElementById('set-site-tagline').value, site_logo: document.getElementById('set-logo').value, site_favicon: document.getElementById('set-favicon').value, home_page: document.getElementById('set-home-page').value }; await submitSettings(p, 'Branding Disimpan!'); };
+        document.getElementById('form-sys').onsubmit = async (e) => { e.preventDefault(); const p = { ik_public_key: document.getElementById('set-ik-pub').value, ik_endpoint: document.getElementById('set-ik-end').value, cf_zone_id: document.getElementById('set-cf-zone').value, cf_api_token: document.getElementById('set-cf-token').value }; await submitSettings(p, 'Integrasi Disimpan!'); };
 
-        // Onload
         window.onload = () => { lucide.createIcons(); if(sessionStorage.getItem('cms_auth')) init(); };
     </script>
 </body>
