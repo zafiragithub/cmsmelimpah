@@ -383,10 +383,57 @@
             try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-post'); showToast('Artikel Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        // --- SETTINGS ---
-        async function submitSettings(p, msg) { try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', payload: p }) }); const d = await res.json(); if(d.status === 'success') { showToast(msg, 'success'); forceSync(); } } catch(err) {} }
-        document.getElementById('form-branding').onsubmit = async (e) => { e.preventDefault(); const p = { site_name: document.getElementById('set-site-name').value, site_tagline: document.getElementById('set-site-tagline').value, site_logo: document.getElementById('set-logo').value, site_favicon: document.getElementById('set-favicon').value, home_page: document.getElementById('set-home-page').value }; await submitSettings(p, 'Branding Disimpan!'); };
-        document.getElementById('form-sys').onsubmit = async (e) => { e.preventDefault(); const p = { ik_public_key: document.getElementById('set-ik-pub').value, ik_endpoint: document.getElementById('set-ik-end').value, cf_zone_id: document.getElementById('set-cf-zone').value, cf_api_token: document.getElementById('set-cf-token').value }; await submitSettings(p, 'Integrasi Disimpan!'); };
+        // --- SETTINGS (DIPERBAIKI DENGAN ANIMASI LOADING) ---
+        async function submitSettings(formId, p, msg) { 
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button[type="submit"]');
+            const oriText = btn.innerHTML;
+            
+            // Ubah tombol jadi loading
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; 
+            btn.disabled = true; 
+            lucide.createIcons();
+
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', payload: p }) }); 
+                const d = await res.json(); 
+                if(d.status === 'success') { 
+                    showToast(msg, 'success'); 
+                    forceSync(); 
+                } else {
+                    showToast('Gagal menyimpan pengaturan', 'error');
+                }
+            } catch(err) { 
+                showToast('Koneksi terputus', 'error'); 
+            } finally { 
+                // Kembalikan tombol ke semula
+                btn.innerHTML = oriText; 
+                btn.disabled = false; 
+            } 
+        }
+
+        document.getElementById('form-branding').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            const p = { 
+                site_name: document.getElementById('set-site-name').value, 
+                site_tagline: document.getElementById('set-site-tagline').value, 
+                site_logo: document.getElementById('set-logo').value, 
+                site_favicon: document.getElementById('set-favicon').value, 
+                home_page: document.getElementById('set-home-page').value 
+            }; 
+            await submitSettings('form-branding', p, 'Branding & Beranda Disimpan!'); 
+        };
+
+        document.getElementById('form-sys').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            const p = { 
+                ik_public_key: document.getElementById('set-ik-pub').value, 
+                ik_endpoint: document.getElementById('set-ik-end').value, 
+                cf_zone_id: document.getElementById('set-cf-zone').value, 
+                cf_api_token: document.getElementById('set-cf-token').value 
+            }; 
+            await submitSettings('form-sys', p, 'Integrasi Disimpan!'); 
+        };
 
         window.onload = () => { lucide.createIcons(); if(sessionStorage.getItem('cms_auth')) init(); };
     </script>
