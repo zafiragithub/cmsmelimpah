@@ -2,8 +2,14 @@
 
 const SHEET_ID = '15_W4a5iyC7zhjvoTVVNNnK-_nxGFbKty2onOukyL76A';
 
+// Fungsi sakti penyedot data dengan sistem AUTO PURGE CACHE
 async function fetchSheet(sheetName) {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}&headers=1`;
+    // Generate angka acak berdasarkan waktu saat ini (Cache Buster)
+    const antiCache = new Date().getTime(); 
+    
+    // Tambahkan parameter &t=... ke URL agar Google mengira ini request baru
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}&headers=1&t=${antiCache}`;
+    
     try {
         const res = await fetch(url);
         const text = await res.text();
