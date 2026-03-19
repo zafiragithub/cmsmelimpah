@@ -1,4 +1,4 @@
-// engine.js - VERSI CANVAS MODE (v7)
+// engine.js - VERSI CANVAS (v8) + DEFAULT HOMEPAGE PREMIUM
 
 const SHEET_ID = '15_W4a5iyC7zhjvoTVVNNnK-_nxGFbKty2onOukyL76A';
 
@@ -44,17 +44,85 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         let homePageSlug = s.home_page || '';
 
-        // --- SKENARIO A: HALAMAN STATIS (MODE CANVAS 100% BEBAS) ---
+        // --- SKENARIO A: HALAMAN STATIS / BERANDA ---
         if (isHome || (!isBlogList && !isPostDetail)) {
             const slug = isHome ? homePageSlug : currentPath.substring(1);
+            
+            // JIKA BERANDA BELUM DIATUR, TAMPILKAN DESAIN PREMIUM INI:
             if (!slug && isHome) {
-                showCanvas(`<div class="text-center p-20"><h2 class="text-2xl font-black">Canvas Siap!</h2><p>Set Beranda di Admin Panel.</p></div>`);
+                const defaultLandingPage = `
+                <div class="min-h-screen bg-slate-50 font-sans">
+                    <nav class="absolute top-0 w-full p-6 md:px-12 flex justify-between items-center z-10">
+                        <div class="text-white font-black text-2xl tracking-tighter">${s.site_name || 'CMS<span class="text-indigo-400">PRO</span>'}</div>
+                        <a href="/admin.html" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md transition-all border border-white/20">Login Admin</a>
+                    </nav>
+
+                    <main class="relative pt-32 pb-24 lg:pt-48 lg:pb-40 overflow-hidden bg-slate-900">
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-20 pointer-events-none">
+                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-[100px] mix-blend-screen"></div>
+                        </div>
+                        
+                        <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+                            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-8">
+                                <span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>
+                                Sistem Berhasil Online
+                            </div>
+                            
+                            <h1 class="text-5xl md:text-7xl font-black text-white tracking-tight mb-8 leading-tight">
+                                Kanvas Kosong <br>
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Menunggu Mahakarya.</span>
+                            </h1>
+                            
+                            <p class="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+                                Website Anda sudah berjalan dengan kecepatan kilat. Saat ini Anda melihat halaman bawaan karena <b class="text-slate-200">Beranda Utama</b> belum diatur.
+                            </p>
+                            
+                            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                                <a href="/admin.html" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-indigo-500/25 hover:-translate-y-1 flex justify-center items-center gap-2">
+                                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Buka Panel Admin
+                                </a>
+                            </div>
+                        </div>
+                    </main>
+
+                    <section class="max-w-6xl mx-auto px-6 py-20 -mt-16 relative z-20">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <i data-lucide="zap" class="w-8 h-8"></i>
+                                </div>
+                                <h3 class="text-xl font-black text-slate-800 mb-3">Super Cepat</h3>
+                                <p class="text-slate-500 text-sm leading-relaxed font-medium">Tidak ada lagi loading lambat. Sistem membypass antrean database tradisional menggunakan data cache statis.</p>
+                            </div>
+                            <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <i data-lucide="database" class="w-8 h-8"></i>
+                                </div>
+                                <h3 class="text-xl font-black text-slate-800 mb-3">Google Sheets DB</h3>
+                                <p class="text-slate-500 text-sm leading-relaxed font-medium">Kelola semua konten web Anda semudah mengisi tabel Excel. Otomatis tersimpan dan tersinkronisasi.</p>
+                            </div>
+                            <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                                <div class="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <i data-lucide="paint-bucket" class="w-8 h-8"></i>
+                                </div>
+                                <h3 class="text-xl font-black text-slate-800 mb-3">Kanvas Bebas</h3>
+                                <p class="text-slate-500 text-sm leading-relaxed font-medium">Desain 100% di tangan Anda. Gunakan editor HTML untuk mem-paste template apapun seperti Elementor.</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <footer class="text-center pb-10 text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-10">
+                        &copy; 2026 CMS LITE ENGINE
+                    </footer>
+                </div>`;
+                showCanvas(defaultLandingPage);
                 return;
             }
+            
+            // JIKA BERANDA SUDAH DIATUR, TAMPILKAN HALAMAN ASLINYA:
             const page = contentData.find(p => p[1] === slug);
             if (page) {
                 document.title = `${page[2] || 'Halaman'} - ${s.site_name || 'Web'}`;
-                // Render Murni Tanpa Pembatas!
                 showCanvas(page[3] || '');
             } else { showError(); }
         } 
@@ -64,7 +132,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.title = `Blog & Artikel - ${s.site_name || 'Web'}`;
             let posts = [...contentData].reverse(); 
 
-            // Kita buatkan Header & Pembatas khusus untuk Blog agar tetap rapi dibaca
             let html = `
             <header class="bg-white border-b border-slate-200 py-6 mb-10 shadow-sm sticky top-0 z-50">
                 <div class="max-w-5xl mx-auto px-6 flex justify-between items-center">
@@ -107,7 +174,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.title = `${post[2] || 'Artikel'} - ${s.site_name || 'Web'}`;
                 let imgHTML = post[4] ? `<img src="${post[4]}" class="w-full h-[400px] object-cover rounded-3xl mb-10 shadow-lg">` : '';
                 
-                // Layout khusus Baca Artikel agar elegan di tengah layar
                 let html = `
                 <header class="bg-white border-b border-slate-200 py-6 mb-10 shadow-sm sticky top-0 z-50">
                     <div class="max-w-3xl mx-auto px-6 flex justify-between items-center">
@@ -135,14 +201,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         showError(); 
     }
 
-    // Fungsi Pembantu Transisi Tampilan Halus
     function showCanvas(htmlContent) {
-        spinner.classList.add('opacity-0'); // Hilangkan loading pelan-pelan
+        spinner.classList.add('opacity-0');
         setTimeout(() => {
             spinner.classList.add('hidden');
             appCanvas.innerHTML = htmlContent;
             appCanvas.classList.remove('hidden');
-            // Sedikit delay agar transisi fade-in berjalan mulus
             setTimeout(() => appCanvas.classList.remove('opacity-0'), 50); 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }, 300);
