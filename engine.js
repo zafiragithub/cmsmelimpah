@@ -1,4 +1,4 @@
-// engine.js - FULL SAAS VERSION (Support Custom Domain & Preview Link)
+// engine.js - FULL SAAS VERSION (Bug Fix Index Array)
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
 
@@ -13,45 +13,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         let isBlogList = currentPath === '/blog';
         let isPostDetail = currentPath.startsWith('/blog/');
         
-        // 1. Deteksi Domain & Link Preview (Sistem SaaS)
         const currentDomain = window.location.hostname; 
         const urlParams = new URLSearchParams(window.location.search);
         let previewSite = urlParams.get('web');
 
-        // Simpan ID Klien di memori browser agar pindah halaman tetap aman
         if (previewSite) {
             sessionStorage.setItem('preview_web', previewSite);
         } else {
             previewSite = sessionStorage.getItem('preview_web');
         }
 
-        // Jika klien sudah pakai Custom Domain (.com), hapus memori preview-nya
-        if (!currentDomain.includes('pages.dev')) {
+        if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
         }
 
-        // 2. Tarik Data dari Apps Script (Metode GET)
         let fetchUrl = `${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`;
-        if (previewSite) {
-            fetchUrl += `&web=${previewSite}`; // Tambahkan parameter web jika ada
-        }
+        if (previewSite) fetchUrl += `&web=${previewSite}`; 
         
         const response = await fetch(fetchUrl);
         const res = await response.json();
         
         if (res.status !== 'success') {
-            console.error(res.message);
             throw new Error('Data tidak ditemukan untuk klien ini.');
         }
 
-        // 3. Mapping data dari Backend ke Frontend
         const settingsData = res.data.settings || {};
         const postsData = res.data.posts || [];
         const pagesData = res.data.pages || [];
 
         const s = settingsData; 
-        
         const siteName = s.site_name || 'BERITAKITA';
         const tagline = s.site_tagline || 'Tajam & Terpercaya';
         
@@ -62,7 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const todayStr = new Date().toLocaleDateString('id-ID', dateOptions);
         let homePageSlug = s.home_page || '';
 
-        // --- KOMPONEN HEADER & FOOTER UNTUK BLOG ---
         const htmlTop = `
             <style>.headline-card:hover img { transform: scale(1.05); } .headline-card img { transition: transform 0.5s ease; }</style>
             <div class="bg-slate-900 text-slate-300 text-xs py-2 hidden md:block">
@@ -108,9 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             </footer>
         `;
 
-        // --- FUNGSI RENDER PORTAL BERITA UTAMA ---
         function renderPortalBerita() {
-            let posts = [...postsData].reverse();
+            let posts = [...postsData]; 
             const safeImg = (url) => url || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80';
             const safeExcerpt = (c) => c ? String(c).replace(/<[^>]+>/g, '').substring(0, 150) + '...' : '';
 
@@ -176,39 +165,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             showCanvas(html);
         }
 
-        // --- ROUTING KONDISIONAL ---
         if (isHome) {
             if (homePageSlug) {
-                const page = pagesData.find(p => p[0] === homePageSlug || p[1] === homePageSlug);
+                // Cari halaman berdasarkan slug (index 1)
+                const page = pagesData.find(p => p[1] === homePageSlug);
                 if (page) {
-                    document.title = `${page[1] || page[2]} - ${siteName}`;
-                    showCanvas(page[2] || page[3]);
+                    document.title = `${page[2]} - ${siteName}`;
+                    showCanvas(page[3]); // Index 3 adalah HTML Content
                 } else { renderPortalBerita(); }
             } else { renderPortalBerita(); }
         } 
         else if (isBlogList) { renderPortalBerita(); } 
         else if (isPostDetail) {
             const slug = currentPath.split('/')[2];
-            const post = postsData.find(p => p[0] === slug || p[1] === slug);
+            const post = postsData.find(p => p[1] === slug);
             if (post) {
-                document.title = `${post[1] || post[2]} - ${siteName}`;
+                document.title = `${post[2]} - ${siteName}`;
                 let popular = postsData.slice(0, 5);
                 let html = htmlTop + `
                 <main class="max-w-7xl mx-auto px-4 py-8"><div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <article class="lg:col-span-8 bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-100">
-                        <span class="text-rose-600 font-black text-[10px] uppercase mb-4 block">${post[2] || post[3] || 'Nasional'}</span>
-                        <h1 class="text-3xl md:text-5xl font-black mb-6 leading-tight">${post[1] || post[2]}</h1>
-                        <div class="text-slate-400 text-xs mb-8 border-y py-4 italic">Diterbitkan pada: ${post[5] || post[6]}</div>
-                        ${(post[3] && post[3].includes('http')) || (post[4] && post[4].includes('http')) ? `<img src="${post[3] || post[4]}" class="w-full rounded-2xl mb-8">` : ''}
-                        <div class="cms-content text-lg leading-relaxed text-slate-700">${post[4] || post[5]}</div>
+                        <span class="text-rose-600 font-black text-[10px] uppercase mb-4 block">${post[3] || 'Nasional'}</span>
+                        <h1 class="text-3xl md:text-5xl font-black mb-6 leading-tight">${post[2]}</h1>
+                        <div class="text-slate-400 text-xs mb-8 border-y py-4 italic">Diterbitkan pada: ${post[6]}</div>
+                        ${post[4] ? `<img src="${post[4]}" class="w-full rounded-2xl mb-8">` : ''}
+                        <div class="cms-content text-lg leading-relaxed text-slate-700">${post[5]}</div>
                     </article>
                     <aside class="lg:col-span-4">
                         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                             <h3 class="text-lg font-black border-b border-slate-200 pb-3 mb-5 uppercase">BACA JUGA</h3>
                             <div class="space-y-5">
-                                ${popular.map((p, idx) => `<a href="/blog/${p[0] || p[1]}" class="flex gap-4 group">
+                                ${popular.map((p, idx) => `<a href="/blog/${p[1]}" class="flex gap-4 group">
                                     <div class="text-4xl font-black text-slate-200 group-hover:text-rose-500">${idx+1}</div>
-                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[1] || p[2]}</h4></div>
+                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4></div>
                                 </a>`).join('')}
                             </div>
                         </div>
@@ -218,10 +207,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else { showError(); }
         } else {
             const slug = currentPath.substring(1);
-            const page = pagesData.find(p => p[0] === slug || p[1] === slug);
+            const page = pagesData.find(p => p[1] === slug);
             if (page) { 
-                document.title = `${page[1] || page[2]} - ${siteName}`;
-                showCanvas(page[2] || page[3]); 
+                document.title = `${page[2]} - ${siteName}`;
+                showCanvas(page[3]); 
             } else { showError(); }
         }
 
@@ -230,39 +219,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         showError(); 
     }
 
-    // ============================================================
-    // FUNGSI RENDER (DIPERBARUI UNTUK MENDUKUNG FULL HTML)
-    // ============================================================
     function showCanvas(htmlContent) {
         if(!htmlContent) { showError(); return; }
         spinner.classList.add('opacity-0');
         setTimeout(() => {
             spinner.classList.add('hidden');
             
-            // Cek apakah konten mengandung Full HTML Document (Landing Page/Canvas Elementor)
             const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
 
             if (isFullDocument) {
-                // Trik Sakti: Tambahkan tag <base> agar jika ada tombol diklik, navigasinya pindah ke halaman utama
                 let iframeHtml = htmlContent;
                 if (!iframeHtml.includes('<base target=')) {
                     iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
                 }
 
-                // Bersihkan layar dan pasang Kaca Transparan (iFrame) berukuran 100% layar
                 appCanvas.innerHTML = ''; 
                 const iframe = document.createElement('iframe');
                 iframe.style.width = '100%';
-                iframe.style.height = '100vh'; // Full tinggi layar
+                iframe.style.height = '100vh'; 
                 iframe.style.border = 'none';
                 appCanvas.appendChild(iframe);
                 
-                // Suntikkan kode HTML Bos ke dalam iFrame
                 iframe.contentWindow.document.open();
                 iframe.contentWindow.document.write(iframeHtml);
                 iframe.contentWindow.document.close();
             } else {
-                // Jika hanya artikel/potongan berita biasa
                 appCanvas.innerHTML = htmlContent;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }
