@@ -288,7 +288,6 @@
             if(window.innerWidth < 768) toggleSidebar(); 
         }
 
-        // LOGIN KHUSUS SAAS (Menyimpan Tenant ID)
         document.getElementById('form-login').onsubmit = async (e) => { 
             e.preventDefault(); 
             const btn = document.getElementById('btn-login'); const oriText = btn.innerHTML;
@@ -300,14 +299,15 @@
                 if(r.status === 'success') { 
                     sessionStorage.setItem('cms_auth', 'true'); 
                     sessionStorage.setItem('cms_name', r.data.nama); 
-                    sessionStorage.setItem('tenant_id', r.data.tenant_id); // SIMPAN TENANT ID
-                    sessionStorage.setItem('custom_domain', r.data.custom_domain || ''); // SIMPAN DOMAIN
+                    sessionStorage.setItem('tenant_id', r.data.tenant_id); 
+                    sessionStorage.setItem('custom_domain', r.data.custom_domain || ''); 
                     
                     showToast('Berhasil Login!', 'success'); init(); 
                 } else { showToast(r.message, 'error'); btn.innerHTML = oriText; btn.disabled = false; } 
             } catch (err) { showToast('Error Koneksi API!', 'error'); btn.innerHTML = oriText; btn.disabled = false; } 
         };
 
+        // PERBAIKAN INDEX DI RENDER UI!
         function renderUI(r) {
             cachedPages = r.pages || [];
             cachedPosts = r.posts || [];
@@ -315,23 +315,27 @@
             document.getElementById('count-pages').innerText = cachedPages.length;
             document.getElementById('count-posts').innerText = cachedPosts.length;
             
+            // PAGES: p[0]=ID, p[1]=Slug, p[2]=Title, p[3]=Content, p[4]=Date
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
-                <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[1]}</td><td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[0]}</td><td class="p-4 md:p-6 text-slate-500">${p[3] || '-'}</td>
+                <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
+                <td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td>
+                <td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
                 <td class="p-4 md:p-6 text-right flex justify-end gap-2">
-                    <button onclick="window.open('/${p[0]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="window.open('/${p[1]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
                     <button onclick="editPage('${p[0]}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
                     <button onclick="deletePage('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </td>
             </tr>`).join('');
 
+            // POSTS: p[0]=ID, p[1]=Slug, p[2]=Title, p[3]=Category, p[4]=Image, p[5]=Content, p[6]=Date
             document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
-                <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[1]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[0]}</div></td>
-                <td class="p-4 md:p-6 font-bold text-emerald-600"><span class="bg-emerald-50 px-3 py-1 rounded-full text-[10px]">${p[2]||'-'}</span></td>
-                <td class="p-4 md:p-6 text-slate-500 text-xs">${p[5] || '-'}</td>
+                <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
+                <td class="p-4 md:p-6 font-bold text-emerald-600"><span class="bg-emerald-50 px-3 py-1 rounded-full text-[10px]">${p[3]||'-'}</span></td>
+                <td class="p-4 md:p-6 text-slate-500 text-xs">${p[6] || '-'}</td>
                 <td class="p-4 md:p-6 text-right flex justify-end gap-2">
-                    <button onclick="window.open('/blog/${p[0]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="window.open('/blog/${p[1]}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
                     <button onclick="editPost('${p[0]}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
                     <button onclick="deletePost('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </td>
@@ -345,10 +349,9 @@
             document.getElementById('set-ik-pub').value = IK_PUB = s.ik_public_key || ''; 
             document.getElementById('set-ik-end').value = s.ik_endpoint || ''; 
             
-            // Set input custom domain dengan data saat ini
             document.getElementById('customDomainInput').value = sessionStorage.getItem('custom_domain') || '';
 
-            document.getElementById('set-home-page').innerHTML = '<option value="">-- Portal Berita (Bawaan) --</option>' + cachedPages.map(p => `<option value="${p[0]}">${p[1]} (/${p[0]})</option>`).join('');
+            document.getElementById('set-home-page').innerHTML = '<option value="">-- Portal Berita (Bawaan) --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
             document.getElementById('set-home-page').value = s.home_page || ''; 
             
             lucide.createIcons();
@@ -360,15 +363,15 @@
             document.getElementById('login-overlay').style.display = 'none'; 
             document.getElementById('admin-main').style.display = 'flex'; 
             document.getElementById('admin-name').innerText = sessionStorage.getItem('cms_name');
-            // Bikin link otomatis untuk Lihat Website berdasarkan Tenant ID
-document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
+            document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
+            
             const cachedDataStr = sessionStorage.getItem(getCacheKey()); 
             if (cachedDataStr) { renderUI(JSON.parse(cachedDataStr)); }
             
             try { 
                 const res = await fetch(API_URL, { 
                     method: 'POST', 
-                    body: JSON.stringify({ action: 'get_admin_data', tenant_id: tenantId }) // WAJIB ADA TENANT ID
+                    body: JSON.stringify({ action: 'get_admin_data', tenant_id: tenantId }) 
                 }); 
                 const r = await res.json(); 
                 if(r.status === 'success') { sessionStorage.setItem(getCacheKey(), JSON.stringify(r.data)); renderUI(r.data); } 
@@ -394,8 +397,8 @@ document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function logout() { sessionStorage.clear(); location.reload(); }
 
-        // CRUD PAGES & POSTS (Dengan Tenant ID)
-        function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[0]; document.getElementById('pg-title').value = p[1]; document.getElementById('pg-content').value = p[2]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
+        // PERBAIKAN INDEX DI EDIT PAGES & POSTS!
+        function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[1]; document.getElementById('pg-title').value = p[2]; document.getElementById('pg-content').value = p[3]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
         async function deletePage(id) { if(!confirm("Yakin hapus halaman?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', tenant_id: sessionStorage.getItem('tenant_id'), id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-page').onsubmit = async (e) => { 
             e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
@@ -404,7 +407,7 @@ document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
             try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-page'); showToast('Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        function editPost(id) { const p = cachedPosts.find(x => x[0] === id); if(!p) return; document.getElementById('pt-id').value = p[0]; document.getElementById('pt-slug').value = p[0]; document.getElementById('pt-title').value = p[1]; document.getElementById('pt-category').value = p[2]; document.getElementById('pt-image').value = p[3]; document.getElementById('pt-content').value = p[4]; document.getElementById('pt-is-edit').value = 'true'; document.getElementById('modal-post').classList.remove('hidden'); }
+        function editPost(id) { const p = cachedPosts.find(x => x[0] === id); if(!p) return; document.getElementById('pt-id').value = p[0]; document.getElementById('pt-slug').value = p[1]; document.getElementById('pt-title').value = p[2]; document.getElementById('pt-category').value = p[3]; document.getElementById('pt-image').value = p[4]; document.getElementById('pt-content').value = p[5]; document.getElementById('pt-is-edit').value = 'true'; document.getElementById('modal-post').classList.remove('hidden'); }
         async function deletePost(id) { if(!confirm("Yakin hapus artikel?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_post', tenant_id: sessionStorage.getItem('tenant_id'), id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-post').onsubmit = async (e) => { 
             e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
@@ -472,7 +475,7 @@ document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
                 if(res.status === 'success') {
                     statusEl.innerHTML = '✅ <b>Sukses!</b> ' + res.message;
                     statusEl.className = 'mt-4 text-sm text-emerald-700 block bg-emerald-50 p-4 rounded-xl border border-emerald-100';
-                    sessionStorage.setItem('custom_domain', domain); // Update session
+                    sessionStorage.setItem('custom_domain', domain); 
                 } else {
                     statusEl.innerHTML = '❌ <b>Gagal:</b> ' + res.message;
                     statusEl.className = 'mt-4 text-sm text-red-700 block bg-red-50 p-4 rounded-xl border border-red-100';
