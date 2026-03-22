@@ -17,15 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 1. Deteksi domain pengunjung (Sistem SaaS)
         const currentDomain = window.location.hostname; 
 
-        // 2. Tarik data khusus untuk domain ini dari Backend Google Apps Script
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' }, // Wajib text/plain agar tidak diblokir CORS Google
-            body: JSON.stringify({ 
-                action: 'get_public_data', 
-                domain: currentDomain 
-            })
-        });
+        // 2. Tarik data khusus (Sistem GET Anti-CORS)
+        const response = await fetch(`${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`);
         
         const res = await response.json();
         
