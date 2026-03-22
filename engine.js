@@ -1,27 +1,7 @@
-// engine.js - VERSI CANVAS (v13) - SUPPORT FULL HTML & JAVASCRIPT
+// engine.js - VERSI SAAS MULTI-TENANT (Support Full HTML & Custom Domain)
 
-const SHEET_ID = '15_W4a5iyC7zhjvoTVVNNnK-_nxGFbKty2onOukyL76A';
-
-// Fungsi sakti penyedot data dengan sistem AUTO PURGE CACHE
-async function fetchSheet(sheetName) {
-    // Generate angka acak berdasarkan waktu saat ini (Cache Buster)
-    const antiCache = new Date().getTime(); 
-    
-    // Tambahkan parameter &t=... ke URL agar Google mengira ini request baru
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}&headers=1&t=${antiCache}`;
-    
-    try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);/);
-        if (match && match[1]) {
-            const data = JSON.parse(match[1]);
-            if (!data.table || !data.table.rows) return [];
-            return data.table.rows.map(row => row.c ? row.c.map(col => (col && col.v !== null && col.v !== undefined) ? col.v : '') : []);
-        }
-    } catch (e) { console.error(e); }
-    return [];
-}
+// ⚠️ GANTI DENGAN URL API GOOGLE APPS SCRIPT BOS (Yang berakhiran /exec)
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const spinner = document.getElementById('loading-spinner');
@@ -34,18 +14,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         let isBlogList = currentPath === '/blog';
         let isPostDetail = currentPath.startsWith('/blog/');
         
-        const results = await Promise.all([
-            fetchSheet('Settings'),
-            fetchSheet('Posts'),
-            fetchSheet('Pages')
-        ]);
-        
-        const settingsData = results[0];
-        const postsData = results[1] || [];
-        const pagesData = results[2] || [];
+        // 1. Deteksi domain pengunjung (Sistem SaaS)
+        const currentDomain = window.location.hostname; 
 
-        let s = {};
-        settingsData.forEach(row => { if(row && row[0]) s[row[0]] = row[1]; });
+        // 2. Tarik data khusus untuk domain ini dari Backend Google Apps Script
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' }, // Wajib text/plain agar tidak diblokir CORS Google
+            body: JSON.stringify({ 
+                action: 'get_public_data', 
+                domain: currentDomain 
+            })
+        });
+        
+        const res = await response.json();
+        
+        if (res.status !== 'success') {
+            throw new Error('Data tidak ditemukan untuk domain ini.');
+        }
+
+        // 3. Mapping data dari Backend ke Frontend
+        const settingsData = res.data.settings || {};
+        const postsData = res.data.posts || [];
+        const pagesData = res.data.pages || [];
+
+        // Di sistem SaaS, settings langsung berupa Object
+        const s = settingsData; 
         
         const siteName = s.site_name || 'BERITAKITA';
         const tagline = s.site_tagline || 'Tajam & Terpercaya';
