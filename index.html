@@ -3,45 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memuat Website...</title>
+    <title>Memuat Ruang Kerja...</title>
+    
     <link rel="preconnect" href="https://script.google.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link id="dynamic-favicon" rel="icon" type="image/x-icon" href="">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* Animasi Spinner Premium */
-        .spinner-core {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(99, 102, 241, 0.1);
-            border-radius: 50%;
-            border-top-color: #6366f1;
-            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #ffffff; 
+            margin: 0; 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 1. KANVAS LOADING UTAMA */
+        #loading-spinner {
+            position: fixed; inset: 0; background: #ffffff; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1), visibility 0.8s;
+        }
+
+        /* 2. KOTAK LOGO DENGAN EFEK KILAU (SHIMMER) */
+        .loader-logo {
+            display: flex; align-items: center; justify-content: center;
+            width: 72px; height: 72px; background: #f8fafc; border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+        }
+
+        .loader-logo::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 1.5s infinite ease-in-out;
+        }
+
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        /* 3. PROGRESS BAR ELEGAN ALA APPLE/VERCEL */
+        .progress-track {
+            width: 220px; height: 3px; background: #f1f5f9; border-radius: 4px; overflow: hidden; position: relative;
+        }
+
+        .progress-fill {
+            position: absolute; top: 0; left: 0; height: 100%; 
+            background: linear-gradient(90deg, #6366f1, #8b5cf6); 
+            border-radius: 4px;
+            animation: indeterminate 1.5s infinite ease-in-out;
+            transform-origin: 0% 50%;
+        }
+
+        @keyframes indeterminate {
+            0% { transform: translateX(-100%) scaleX(0.2); }
+            50% { transform: translateX(0%) scaleX(0.5); }
+            100% { transform: translateX(100%) scaleX(0.2); }
+        }
+
+        /* 4. TEKS LOADING PROFESIONAL */
+        .loading-text {
+            margin-top: 16px; font-size: 10px; font-weight: 800; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 0.2em;
+            animation: pulse-text 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-text { 
+            0%, 100% { opacity: 1; } 
+            50% { opacity: 0.4; } 
+        }
     </style>
 </head>
-<body class="bg-slate-50 m-0 p-0 overflow-x-hidden selection:bg-indigo-500 selection:text-white">
-    
-    <div id="loading-spinner" class="fixed inset-0 bg-white/80 backdrop-blur-md z-[999] flex flex-col items-center justify-center transition-all duration-500">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl shadow-indigo-100/50 flex flex-col items-center border border-white/50">
-            <div class="spinner-core mb-6 shadow-inner"></div>
-            <div class="text-indigo-600 font-black tracking-[0.2em] uppercase text-[10px] animate-pulse">Menyiapkan Sistem</div>
+<body class="selection:bg-indigo-500 selection:text-white">
+
+    <div id="loading-spinner">
+        <div class="loader-logo">
+            <i data-lucide="layers" class="w-8 h-8 text-indigo-600"></i>
         </div>
+        <div class="progress-track">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="loading-text">Menyiapkan Ruang Kerja</div>
     </div>
 
-    <div id="app-canvas" class="w-full min-h-screen opacity-0 transition-opacity duration-700 hidden"></div>
+    <div id="app-canvas" class="w-full min-h-screen opacity-0 transition-opacity duration-1000 hidden"></div>
 
     <div id="error-box" class="hidden min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
-        <div class="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md border border-slate-100">
+        <div class="bg-white p-10 rounded-[2rem] shadow-xl text-center max-w-md border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-rose-500"></div>
             <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i data-lucide="alert-triangle" class="w-10 h-10"></i>
+                <i data-lucide="globe-2" class="w-10 h-10"></i>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 mb-3">Website Tidak Ditemukan</h2>
-            <p class="text-slate-500 text-sm">Pastikan domain sudah terdaftar di sistem kami.</p>
+            <h2 class="text-2xl font-black text-slate-800 mb-3">Domain Belum Aktif</h2>
+            <p class="text-slate-500 text-sm leading-relaxed">Website untuk domain ini tidak ditemukan atau sedang dalam proses propagasi DNS Cloudflare.</p>
         </div>
     </div>
 
-    <script src="engine.js?v=saas_ngebut"></script>
+    <script src="engine.js?v=enterprise_ready"></script>
 
 </body>
 </html>
