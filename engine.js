@@ -14,17 +14,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         let isBlogList = currentPath === '/blog';
         let isPostDetail = currentPath.startsWith('/blog/');
         
-        // 1. Deteksi domain pengunjung (Sistem SaaS)
+        // 1. Deteksi domain pengunjung ATAU Link Preview (Sistem SaaS)
         const currentDomain = window.location.hostname; 
+        const urlParams = new URLSearchParams(window.location.search);
+        let previewSite = urlParams.get('web');
 
-        // 2. Tarik data khusus (Sistem GET Anti-CORS)
-        const response = await fetch(`${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`);
-        
-        const res = await response.json();
-        
-        if (res.status !== 'success') {
-            throw new Error('Data tidak ditemukan untuk domain ini.');
+        // Simpan ID Klien di memori agar saat pindah halaman tetap di web yang sama
+        if (previewSite) {
+            sessionStorage.setItem('preview_web', previewSite);
+        } else {
+            previewSite = sessionStorage.getItem('preview_web');
         }
+
+        // Jika pengunjung akses pakai Custom Domain beneran, hapus memori preview-nya
+        if (!currentDomain.includes('pages.dev')) {
+            sessionStorage.removeItem('preview_web');
+            previewSite = null;
+        }
+
+        // 2. Tarik data khusus (Sistem GET Anti-CORS & Support Preview)
+        let fetchUrl = `${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`;
+        if (previewSite) {
+            fetchUrl += `&web=${previewSite}`;
+        }
+        
+        const response = await fetch(fetchUrl);
 
         // 3. Mapping data dari Backend ke Frontend
         const settingsData = res.data.settings || {};
