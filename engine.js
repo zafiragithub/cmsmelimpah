@@ -1,4 +1,4 @@
-// engine.js - FULL SAAS VERSION (Bug Fix Index Array)
+// engine.js - FULL SAAS VERSION (With Local Cache / NOS System)
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
 
@@ -17,23 +17,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         let previewSite = urlParams.get('web');
 
+        // Manajemen Session untuk Preview Link
         if (previewSite) {
             sessionStorage.setItem('preview_web', previewSite);
         } else {
             previewSite = sessionStorage.getItem('preview_web');
         }
 
+        // Hapus session jika diakses via domain asli (bukan preview)
         if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
         }
 
+        // ==========================================
+        // JURUS CACHE SUPER CEPAT (Anti-Berat / NOS)
+        // ==========================================
         let fetchUrl = `${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`;
         if (previewSite) fetchUrl += `&web=${previewSite}`; 
-        
-        const response = await fetch(fetchUrl);
-        const res = await response.json();
-        
+
+        let res;
+        const cacheKey = 'saas_data_' + (previewSite || currentDomain);
+        const cachedData = sessionStorage.getItem(cacheKey);
+
+        if (cachedData) {
+            // Jika data sudah ada di memori browser, ambil dalam 0.1 detik!
+            res = JSON.parse(cachedData); 
+        } else {
+            // Jika belum ada, tarik dari server Google
+            const response = await fetch(fetchUrl);
+            res = await response.json(); 
+            
+            // Simpan ke memori browser agar klik selanjutnya instant
+            if (res.status === 'success') {
+                sessionStorage.setItem(cacheKey, JSON.stringify(res));
+            }
+        }
+        // ==========================================
+
         if (res.status !== 'success') {
             throw new Error('Data tidak ditemukan untuk klien ini.');
         }
@@ -167,11 +188,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (isHome) {
             if (homePageSlug) {
-                // Cari halaman berdasarkan slug (index 1)
                 const page = pagesData.find(p => p[1] === homePageSlug);
                 if (page) {
                     document.title = `${page[2]} - ${siteName}`;
-                    showCanvas(page[3]); // Index 3 adalah HTML Content
+                    showCanvas(page[3]); 
                 } else { renderPortalBerita(); }
             } else { renderPortalBerita(); }
         } 
