@@ -372,6 +372,35 @@
             
             lucide.createIcons();
         }
+        async function init() {
+            if(!sessionStorage.getItem('cms_auth')) return;
+            
+            const tenantId = sessionStorage.getItem('tenant_id');
+            const customDomain = sessionStorage.getItem('custom_domain');
+            
+            document.getElementById('login-overlay').style.display = 'none'; 
+            document.getElementById('admin-main').style.display = 'flex'; 
+            document.getElementById('admin-name').innerText = sessionStorage.getItem('cms_name');
+            
+            // Update Tombol "Lihat Website" di Sidebar Kiri
+            if (customDomain && customDomain.includes('.')) {
+                document.getElementById('btn-lihat-web').href = `https://${customDomain}`;
+            } else {
+                document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
+            }
+            
+            const cachedDataStr = sessionStorage.getItem(getCacheKey()); 
+            if (cachedDataStr) { renderUI(JSON.parse(cachedDataStr)); }
+            
+            try { 
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'get_admin_data', tenant_id: tenantId }) 
+                }); 
+                const r = await res.json(); 
+                if(r.status === 'success') { sessionStorage.setItem(getCacheKey(), JSON.stringify(r.data)); renderUI(r.data); } 
+            } catch (err) { showToast('Gagal sinkronisasi data', 'warning'); }
+        }
         function forceSync() { sessionStorage.removeItem(getCacheKey()); showToast('Menyegarkan data...', 'warning'); init(); }
 
         function insertAtCursor(id, val) {
