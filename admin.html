@@ -307,7 +307,7 @@
             } catch (err) { showToast('Error Koneksi API!', 'error'); btn.innerHTML = oriText; btn.disabled = false; } 
         };
 
-        // PERBAIKAN LINK DI RENDER UI (Suntikkan Tenant ID saat Preview)
+        // PERBAIKAN LINK CERDAS (Custom Domain vs Preview)
         function renderUI(r) {
             cachedPages = r.pages || [];
             cachedPosts = r.posts || [];
@@ -315,29 +315,43 @@
             document.getElementById('count-pages').innerText = cachedPages.length;
             document.getElementById('count-posts').innerText = cachedPosts.length;
             
-            const tenantId = sessionStorage.getItem('tenant_id'); // Ambil ID Klien
+            const tenantId = sessionStorage.getItem('tenant_id'); 
+            const customDomain = sessionStorage.getItem('custom_domain'); 
 
-            // PAGES: Link disuntikkan ?web=tenantId agar tidak nyangkut saat dibuka
+            // Fungsi Pintar Pembuat URL
+            const makeUrl = (type, slug) => {
+                if (customDomain && customDomain.includes('.')) {
+                    // Jika klien SUDAH punya domain (.com / .id), link langsung bersih!
+                    if (type === 'page') return `https://${customDomain}/${slug}`;
+                    if (type === 'post') return `https://${customDomain}/?blog=${slug}`;
+                } else {
+                    // Jika BELUM punya domain, pakai link bawaan pages.dev + parameter ID
+                    if (type === 'page') return `/${slug}?web=${tenantId}`;
+                    if (type === 'post') return `/?blog=${slug}&web=${tenantId}`;
+                }
+            };
+            
+            // Render Tabel Halaman Statis
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
                 <td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td>
                 <td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
                 <td class="p-4 md:p-6 text-right flex justify-end gap-2">
-                    <button onclick="window.open('/${p[1]}?web=${tenantId}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="window.open('${makeUrl('page', p[1])}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
                     <button onclick="editPage('${p[0]}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
                     <button onclick="deletePage('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </td>
             </tr>`).join('');
 
-            // POSTS: Link disuntikkan ?web=tenantId
+            // Render Tabel Artikel/Blog
             document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
                 <td class="p-4 md:p-6 font-bold text-emerald-600"><span class="bg-emerald-50 px-3 py-1 rounded-full text-[10px]">${p[3]||'-'}</span></td>
                 <td class="p-4 md:p-6 text-slate-500 text-xs">${p[6] || '-'}</td>
                 <td class="p-4 md:p-6 text-right flex justify-end gap-2">
-                    <button onclick="window.open('/blog/${p[1]}?web=${tenantId}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="window.open('${makeUrl('post', p[1])}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
                     <button onclick="editPost('${p[0]}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
                     <button onclick="deletePost('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </td>
@@ -358,27 +372,6 @@
             
             lucide.createIcons();
         }
-        async function init() {
-            if(!sessionStorage.getItem('cms_auth')) return;
-            const tenantId = sessionStorage.getItem('tenant_id');
-            document.getElementById('login-overlay').style.display = 'none'; 
-            document.getElementById('admin-main').style.display = 'flex'; 
-            document.getElementById('admin-name').innerText = sessionStorage.getItem('cms_name');
-            document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
-            
-            const cachedDataStr = sessionStorage.getItem(getCacheKey()); 
-            if (cachedDataStr) { renderUI(JSON.parse(cachedDataStr)); }
-            
-            try { 
-                const res = await fetch(API_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'get_admin_data', tenant_id: tenantId }) 
-                }); 
-                const r = await res.json(); 
-                if(r.status === 'success') { sessionStorage.setItem(getCacheKey(), JSON.stringify(r.data)); renderUI(r.data); } 
-            } catch (err) { showToast('Gagal sinkronisasi data', 'warning'); }
-        }
-
         function forceSync() { sessionStorage.removeItem(getCacheKey()); showToast('Menyegarkan data...', 'warning'); init(); }
 
         function insertAtCursor(id, val) {
