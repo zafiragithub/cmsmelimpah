@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memuat Website...</title>
+    <title>Memuat...</title>
     
     <link rel="preconnect" href="https://script.google.com">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,21 +12,36 @@
     <link id="dynamic-favicon" rel="icon" type="image/x-icon" href="">
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; }
-        /* Tidak pakai CSS custom untuk layout agar Tailwind berfungsi sempurna */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; background-color: #f8fafc; }
+        
+        /* KANVAS LOADING SHEETFLARE STYLE */
+        #loading-spinner {
+            position: fixed; inset: 0; background-color: #f8fafc; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+        .percentage-text {
+            font-size: 6rem; font-weight: 900; color: #1e293b; line-height: 1; letter-spacing: -0.05em;
+        }
+        .progress-container {
+            width: 240px; height: 6px; background-color: #e2e8f0; border-radius: 6px; margin-top: 24px; overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%; background-color: #4f46e5; width: 0%; transition: width 0.15s ease-out;
+        }
     </style>
 </head>
-<body class="bg-slate-50 m-0 p-0 overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+<body class="m-0 p-0 overflow-x-hidden selection:bg-indigo-500 selection:text-white">
     
-    <div id="loading-spinner" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center transition-opacity duration-300">
-        <div class="relative w-16 h-16 mb-4">
-            <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-            <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+    <div id="loading-spinner">
+        <div id="loading-percentage" class="percentage-text">0%</div>
+        <div class="text-xs font-bold text-slate-400 mt-3 uppercase tracking-widest animate-pulse">Menyiapkan Data...</div>
+        <div class="progress-container">
+            <div id="loading-bar" class="progress-bar"></div>
         </div>
-        <div class="text-xs font-bold text-slate-400 tracking-widest uppercase animate-pulse">Memuat...</div>
     </div>
 
-    <div id="app-canvas" class="w-full min-h-screen opacity-0 transition-opacity duration-300 hidden"></div>
+    <div id="app-canvas" class="w-full min-h-screen opacity-0 transition-opacity duration-500 hidden"></div>
 
     <div id="error-box" class="hidden min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
         <div class="bg-white p-10 rounded-[2rem] shadow-xl text-center max-w-md border border-slate-100">
@@ -38,7 +53,7 @@
         </div>
     </div>
 
-    <script src="engine.js?v=fix_cincin"></script>
+    <script src="engine.js?v=sheetflare_100"></script>
 
 </body>
 </html>
