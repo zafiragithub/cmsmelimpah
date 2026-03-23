@@ -239,40 +239,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         showError(); 
     }
 
+    // ============================================================
+    // FUNGSI RENDER (CEPAT & INSTAN)
+    // ============================================================
     function showCanvas(htmlContent) {
         if(!htmlContent) { showError(); return; }
-        spinner.classList.add('opacity-0');
-        setTimeout(() => {
-            spinner.classList.add('hidden');
-            
-            const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
+        
+        // 1. Langsung Hancurkan Kaca Spinner! (Tidak ada delay)
+        spinner.classList.add('hidden');
+        
+        const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
 
-            if (isFullDocument) {
-                let iframeHtml = htmlContent;
-                if (!iframeHtml.includes('<base target=')) {
-                    iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
-                }
-
-                appCanvas.innerHTML = ''; 
-                const iframe = document.createElement('iframe');
-                iframe.style.width = '100%';
-                iframe.style.height = '100vh'; 
-                iframe.style.border = 'none';
-                appCanvas.appendChild(iframe);
-                
-                iframe.contentWindow.document.open();
-                iframe.contentWindow.document.write(iframeHtml);
-                iframe.contentWindow.document.close();
-            } else {
-                appCanvas.innerHTML = htmlContent;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (isFullDocument) {
+            let iframeHtml = htmlContent;
+            if (!iframeHtml.includes('<base target=')) {
+                iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
             }
 
-            appCanvas.classList.remove('hidden');
-            setTimeout(() => appCanvas.classList.remove('opacity-0'), 50); 
-        }, 300);
+            appCanvas.innerHTML = ''; 
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh'; 
+            iframe.style.border = 'none';
+            appCanvas.appendChild(iframe);
+            
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(iframeHtml);
+            iframe.contentWindow.document.close();
+        } else {
+            appCanvas.innerHTML = htmlContent;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // 2. Munculkan Website Instan!
+        appCanvas.classList.remove('hidden');
+        setTimeout(() => appCanvas.classList.remove('opacity-0'), 10); 
     }
 
+    function showError() { 
+        spinner.classList.add('hidden'); 
+        appCanvas.classList.add('hidden'); 
+        errorBox.classList.remove('hidden'); 
+    }
     function showError() { 
         spinner.classList.add('hidden'); 
         appCanvas.classList.add('hidden'); 
