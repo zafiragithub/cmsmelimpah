@@ -281,9 +281,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         appCanvas.classList.add('hidden'); 
         errorBox.classList.remove('hidden'); 
     }
-    function showError() { 
-        spinner.classList.add('hidden'); 
-        appCanvas.classList.add('hidden'); 
-        errorBox.classList.remove('hidden'); 
-    }
 });
