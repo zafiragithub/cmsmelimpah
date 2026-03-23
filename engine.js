@@ -1,4 +1,4 @@
-// engine.js - FULL SAAS VERSION (With Local Cache / NOS System)
+// engine.js - 0-100% Loader (Sheetflare Style) & Fast Render
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
 
@@ -6,7 +6,85 @@ document.addEventListener('DOMContentLoaded', async () => {
     const spinner = document.getElementById('loading-spinner');
     const appCanvas = document.getElementById('app-canvas');
     const errorBox = document.getElementById('error-box');
+    const percEl = document.getElementById('loading-percentage');
+    const barEl = document.getElementById('loading-bar');
 
+    // 1. SISTEM SIMULASI PROGRESS 0-90%
+    let simProgress = 0;
+    let progressInterval = setInterval(() => {
+        simProgress += Math.random() * 15;
+        if (simProgress > 90) simProgress = 90; // Mentok di 90% sampai data benar-benar turun
+        if (percEl) percEl.innerText = Math.floor(simProgress) + '%';
+        if (barEl) barEl.style.width = simProgress + '%';
+    }, 150);
+
+    // 2. FUNGSI PENYELESAIAN LOADING (100% & HANCURKAN SPINNER)
+    function finishLoading(html) {
+        clearInterval(progressInterval);
+        if (percEl) percEl.innerText = '100%';
+        if (barEl) barEl.style.width = '100%';
+        
+        setTimeout(() => {
+            if(spinner) spinner.style.opacity = '0'; // Pudar perlahan
+            setTimeout(() => {
+                if(spinner) spinner.style.display = 'none'; // Hancurkan kaca bening!
+                renderHTML(html);
+            }, 400); // Waktu pudarnya
+        }, 200); // Jeda diam di 100% sejenak biar elegan
+    }
+
+    // 3. FUNGSI TAMPILKAN KANVAS WEBSITE
+    function renderHTML(htmlContent) {
+        if(!htmlContent) { forceError(); return; }
+        
+        const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
+
+        if (isFullDocument) {
+            let iframeHtml = htmlContent;
+            // Cegah klik nyangkut di dalam iframe
+            if (!iframeHtml.includes('<base target=')) {
+                iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
+            }
+            appCanvas.innerHTML = ''; 
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh'; 
+            iframe.style.border = 'none';
+            appCanvas.appendChild(iframe);
+            
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(iframeHtml);
+            iframe.contentWindow.document.close();
+        } else {
+            appCanvas.innerHTML = htmlContent;
+            initIcons();
+        }
+
+        // Tampilkan web
+        appCanvas.classList.remove('hidden');
+        setTimeout(() => appCanvas.style.opacity = '1', 50); 
+    }
+
+    function initIcons() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            setTimeout(initIcons, 50);
+        }
+    }
+
+    function forceError() {
+        clearInterval(progressInterval);
+        if(spinner) spinner.style.display = 'none';
+        if(errorBox) {
+            errorBox.classList.remove('hidden');
+            errorBox.style.display = 'flex';
+        }
+    }
+
+    // ===============================================
+    // JANTUNG UTAMA SISTEM SAAS & CACHE
+    // ===============================================
     try {
         let currentPath = window.location.pathname.replace(/\/$/, '');
         let isHome = currentPath === '' || currentPath === '/' || currentPath === '/index.html';
@@ -17,22 +95,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         let previewSite = urlParams.get('web');
 
-        // Manajemen Session untuk Preview Link
         if (previewSite) {
             sessionStorage.setItem('preview_web', previewSite);
         } else {
             previewSite = sessionStorage.getItem('preview_web');
         }
 
-        // Hapus session jika diakses via domain asli (bukan preview)
         if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
         }
 
-        // ==========================================
-        // JURUS CACHE SUPER CEPAT (Anti-Berat / NOS)
-        // ==========================================
         let fetchUrl = `${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`;
         if (previewSite) fetchUrl += `&web=${previewSite}`; 
 
@@ -41,22 +114,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cachedData = sessionStorage.getItem(cacheKey);
 
         if (cachedData) {
-            // Jika data sudah ada di memori browser, ambil dalam 0.1 detik!
+            // Jika sudah ada cache, loading langsung lari ke 95%
+            simProgress = 95;
             res = JSON.parse(cachedData); 
         } else {
-            // Jika belum ada, tarik dari server Google
             const response = await fetch(fetchUrl);
             res = await response.json(); 
-            
-            // Simpan ke memori browser agar klik selanjutnya instant
             if (res.status === 'success') {
                 sessionStorage.setItem(cacheKey, JSON.stringify(res));
             }
         }
-        // ==========================================
 
         if (res.status !== 'success') {
-            throw new Error('Data tidak ditemukan untuk klien ini.');
+            throw new Error('Data tidak ditemukan');
         }
 
         const settingsData = res.data.settings || {};
@@ -68,7 +138,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tagline = s.site_tagline || 'Tajam & Terpercaya';
         
         if (s.site_name) document.title = s.site_name;
-        if (s.site_favicon) document.getElementById('dynamic-favicon').href = s.site_favicon;
+        if (s.site_favicon) {
+            let fav = document.getElementById('dynamic-favicon');
+            if(fav) fav.href = s.site_favicon;
+        }
 
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const todayStr = new Date().toLocaleDateString('id-ID', dateOptions);
@@ -89,10 +162,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             <header class="bg-white">
                 <div class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
                     <a href="/blog" class="flex-shrink-0">
-                        <h1 class="text-4xl font-black text-slate-900 tracking-tighter uppercase">${siteName.substring(0, siteName.length/2)}<span class="text-rose-600">${siteName.substring(siteName.length/2)}</span></h1>
+                        <h1 class="text-4xl font-black text-slate-900 tracking-tighter uppercase">${siteName.substring(0, Math.ceil(siteName.length/2))}<span class="text-rose-600">${siteName.substring(Math.ceil(siteName.length/2))}</span></h1>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${tagline}</p>
                     </a>
-                    <div class="hidden lg:flex w-[728px] h-[90px] bg-slate-100 border border-slate-200 rounded-xl items-center justify-center text-slate-400 font-bold text-sm tracking-widest uppercase">Space Iklan</div>
                 </div>
             </header>
             <nav class="bg-white border-y border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -119,8 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             </footer>
         `;
 
-        function renderPortalBerita() {
-            let posts = [...postsData]; 
+        function buildPortalHtml() {
+            let posts = [...postsData].reverse(); 
             const safeImg = (url) => url || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80';
             const safeExcerpt = (c) => c ? String(c).replace(/<[^>]+>/g, '').substring(0, 150) + '...' : '';
 
@@ -174,7 +246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div class="space-y-5">
                                 ${popular.map((p, idx) => `<a href="/blog/${p[1]}" class="flex gap-4 group">
                                     <div class="text-4xl font-black text-slate-200 group-hover:text-rose-500">${idx+1}</div>
-                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4><span class="text-[10px] text-slate-400 uppercase">${p[3]||'Nasional'}</span></div>
+                                    <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4></div>
                                 </a>`).join('')}
                             </div>
                         </div>
@@ -182,20 +254,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>`;
             }
             html += `</main>` + htmlFooter;
-            document.title = `Portal Berita - ${siteName}`;
-            showCanvas(html);
+            return html;
         }
 
+        // ===============================================
+        // ROUTING SYSTEM DENGAN FINISHE LOADING
+        // ===============================================
         if (isHome) {
             if (homePageSlug) {
                 const page = pagesData.find(p => p[1] === homePageSlug);
                 if (page) {
                     document.title = `${page[2]} - ${siteName}`;
-                    showCanvas(page[3]); 
-                } else { renderPortalBerita(); }
-            } else { renderPortalBerita(); }
+                    finishLoading(page[3]);
+                } else { finishLoading(buildPortalHtml()); }
+            } else { finishLoading(buildPortalHtml()); }
         } 
-        else if (isBlogList) { renderPortalBerita(); } 
+        else if (isBlogList) { 
+            finishLoading(buildPortalHtml()); 
+        } 
         else if (isPostDetail) {
             const slug = currentPath.split('/')[2];
             const post = postsData.find(p => p[1] === slug);
@@ -223,62 +299,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </aside>
                 </div></main>` + htmlFooter;
-                showCanvas(html);
-            } else { showError(); }
+                finishLoading(html);
+            } else { forceError(); }
         } else {
-            const slug = currentPath.substring(1);
+            const slug = currentPath.substring(1); 
             const page = pagesData.find(p => p[1] === slug);
             if (page) { 
                 document.title = `${page[2]} - ${siteName}`;
-                showCanvas(page[3]); 
-            } else { showError(); }
+                finishLoading(page[3]); 
+            } else { forceError(); }
         }
 
     } catch (error) { 
         console.error("Error Sistem:", error); 
-        showError(); 
-    }
-
-    // ============================================================
-    // FUNGSI RENDER (CEPAT & INSTAN)
-    // ============================================================
-    function showCanvas(htmlContent) {
-        if(!htmlContent) { showError(); return; }
-        
-        // 1. Langsung Hancurkan Kaca Spinner! (Tidak ada delay)
-        spinner.classList.add('hidden');
-        
-        const isFullDocument = htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i);
-
-        if (isFullDocument) {
-            let iframeHtml = htmlContent;
-            if (!iframeHtml.includes('<base target=')) {
-                iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
-            }
-
-            appCanvas.innerHTML = ''; 
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100vh'; 
-            iframe.style.border = 'none';
-            appCanvas.appendChild(iframe);
-            
-            iframe.contentWindow.document.open();
-            iframe.contentWindow.document.write(iframeHtml);
-            iframe.contentWindow.document.close();
-        } else {
-            appCanvas.innerHTML = htmlContent;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        // 2. Munculkan Website Instan!
-        appCanvas.classList.remove('hidden');
-        setTimeout(() => appCanvas.classList.remove('opacity-0'), 10); 
-    }
-
-    function showError() { 
-        spinner.classList.add('hidden'); 
-        appCanvas.classList.add('hidden'); 
-        errorBox.classList.remove('hidden'); 
+        forceError(); 
     }
 });
