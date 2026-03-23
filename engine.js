@@ -1,4 +1,4 @@
-// engine.js - Circular 0-100% Loader & Anti-Stuck Routing
+// engine.js - 0-100% Loader & Anti-Stuck Preview Routing (Link Preserver)
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
 
@@ -7,41 +7,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     const appCanvas = document.getElementById('app-canvas');
     const errorBox = document.getElementById('error-box');
     const percEl = document.getElementById('loading-percentage');
-    const circleEl = document.getElementById('loading-circle');
-    const circumference = 283; // Keliling cincin SVG
+    const barEl = document.getElementById('loading-bar');
 
-    // 1. SISTEM SIMULASI PROGRESS CINCIN (0 - 90%)
+    // 1. SISTEM SIMULASI PROGRESS 0-90%
     let simProgress = 0;
     let progressInterval = setInterval(() => {
         simProgress += Math.random() * 15;
-        if (simProgress > 90) simProgress = 90; // Mentok di 90% nunggu data kelar
-        updateProgressUI(simProgress);
+        if (simProgress > 90) simProgress = 90; 
+        if (percEl) percEl.innerText = Math.floor(simProgress) + '%';
+        if (barEl) barEl.style.width = simProgress + '%';
     }, 150);
 
-    function updateProgressUI(percent) {
-        if (percEl) percEl.innerText = Math.floor(percent) + '%';
-        if (circleEl) {
-            // Rumus memutar cincin
-            const offset = circumference - (percent / 100) * circumference;
-            circleEl.style.strokeDashoffset = offset;
-        }
-    }
-
-    // 2. FUNGSI PENYELESAIAN LOADING (Lari ke 100% & Hapus Layar)
+    // 2. FUNGSI PENYELESAIAN LOADING (100% & HANCURKAN SPINNER)
     function finishLoading(html) {
         clearInterval(progressInterval);
-        updateProgressUI(100); // Set ke 100%
+        if (percEl) percEl.innerText = '100%';
+        if (barEl) barEl.style.width = '100%';
         
         setTimeout(() => {
-            if(spinner) spinner.style.opacity = '0'; // Pudar perlahan
+            if(spinner) spinner.style.opacity = '0'; 
             setTimeout(() => {
-                if(spinner) spinner.style.display = 'none'; // HANCURKAN KACA SPINNER!
+                if(spinner) spinner.style.display = 'none'; // Hancurkan kaca bening!
                 renderHTML(html);
             }, 400); 
         }, 200); 
     }
 
-    // 3. FUNGSI MENGGAMBAR KANVAS WEBSITE
+    // 3. FUNGSI TAMPILKAN KANVAS WEBSITE
     function renderHTML(htmlContent) {
         if(!htmlContent) { forceError(); return; }
         
@@ -49,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (isFullDocument) {
             let iframeHtml = htmlContent;
-            // Agar link di dalam iframe bisa diklik pindah halaman
+            // Cegah klik nyangkut di dalam iframe
             if (!iframeHtml.includes('<base target=')) {
                 iframeHtml = iframeHtml.replace('<head>', '<head><base target="_parent">');
             }
@@ -68,13 +60,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             initIcons();
         }
 
+        // Tampilkan web
         appCanvas.classList.remove('hidden');
         setTimeout(() => appCanvas.style.opacity = '1', 50); 
     }
 
     function initIcons() {
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        else setTimeout(initIcons, 50);
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            setTimeout(initIcons, 50);
+        }
     }
 
     function forceError() {
@@ -87,21 +83,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ===============================================
-    // JANTUNG UTAMA SISTEM SAAS & ROUTING ANTI-STUCK
+    // JANTUNG UTAMA SISTEM SAAS & CACHE
     // ===============================================
     try {
-        // Deteksi Parameter URL (Menggantikan sistem Pathname lama yang bikin stuck)
+        let currentPath = window.location.pathname.replace(/\/$/, '');
+        let isHome = currentPath === '' || currentPath === '/' || currentPath === '/index.html';
+        
         const currentDomain = window.location.hostname; 
         const urlParams = new URLSearchParams(window.location.search);
         
         let previewSite = urlParams.get('web');
-        let blogSlug = urlParams.get('blog'); // Menangkap URL ?blog=judul
-        let pageSlug = urlParams.get('page'); // Menangkap URL ?page=judul
-
-        let isHome = !blogSlug && !pageSlug;
-        let isBlogList = blogSlug === 'all';
-        let isPostDetail = blogSlug && blogSlug !== 'all';
-        let isPageDetail = !!pageSlug;
+        let blogSlug = urlParams.get('blog');
+        let pageSlug = urlParams.get('page');
 
         if (previewSite) {
             sessionStorage.setItem('preview_web', previewSite);
@@ -109,14 +102,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             previewSite = sessionStorage.getItem('preview_web');
         }
 
+        // Hapus memori jika pakai domain Custom
         if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
         }
 
-        // ==========================================
-        // TARIK DATA (DENGAN CACHE SUPER CEPAT)
-        // ==========================================
+        // PENAHAN PARAMETER PREVIEW (Sangat Penting agar link bisa di-share)
+        const webQuery = previewSite ? '&web=' + previewSite : '';
+        const homeQuery = previewSite ? '?web=' + previewSite : '?';
+
+        let isBlogList = blogSlug === 'all';
+        let isPostDetail = blogSlug && blogSlug !== 'all';
+        let isPageDetail = !!pageSlug;
+
         let fetchUrl = `${SCRIPT_URL}?action=get_public_data&domain=${currentDomain}`;
         if (previewSite) fetchUrl += `&web=${previewSite}`; 
 
@@ -125,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cachedData = sessionStorage.getItem(cacheKey);
 
         if (cachedData) {
-            simProgress = 95; // Kalau data dari memori browser, langsung loncat ke 95%
+            simProgress = 95; // Langsung loncat 95% kalau ada cache
             res = JSON.parse(cachedData); 
         } else {
             const response = await fetch(fetchUrl);
@@ -135,7 +134,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        if (res.status !== 'success') throw new Error('Data tidak ditemukan');
+        if (res.status !== 'success') {
+            throw new Error('Data tidak ditemukan');
+        }
 
         const settingsData = res.data.settings || {};
         const postsData = res.data.posts || [];
@@ -155,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const todayStr = new Date().toLocaleDateString('id-ID', dateOptions);
         let homePageSlug = s.home_page || '';
 
-        // HEADER & NAV (Link diganti menggunakan Parameter ?blog= dan ?page=)
+        // HEADER & NAV (Sudah disuntikkan webQuery penahan URL)
         const htmlTop = `
             <style>.headline-card:hover img { transform: scale(1.05); } .headline-card img { transition: transform 0.5s ease; }</style>
             <div class="bg-slate-900 text-slate-300 text-xs py-2 hidden md:block">
@@ -163,14 +164,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="font-medium">${todayStr}</div>
                     <div class="flex items-center gap-4">
                         <span class="font-bold text-rose-500 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> LINK CEPAT:</span>
-                        <a href="?" class="hover:text-white transition-colors">Beranda</a>
+                        <a href="${homeQuery}" class="hover:text-white transition-colors">Beranda</a>
                         <a href="/admin.html" class="hover:text-white transition-colors">Panel Redaksi</a>
                     </div>
                 </div>
             </div>
             <header class="bg-white">
                 <div class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-                    <a href="?blog=all" class="flex-shrink-0">
+                    <a href="?blog=all${webQuery}" class="flex-shrink-0">
                         <h1 class="text-4xl font-black text-slate-900 tracking-tighter uppercase">${siteName.substring(0, Math.ceil(siteName.length/2))}<span class="text-rose-600">${siteName.substring(Math.ceil(siteName.length/2))}</span></h1>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${tagline}</p>
                     </a>
@@ -179,7 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <nav class="bg-white border-y border-slate-200 sticky top-0 z-50 shadow-sm">
                 <div class="max-w-7xl mx-auto px-4">
                     <ul class="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-[13px] font-bold uppercase tracking-wider text-slate-600 py-4 custom-scroll hide-scrollbar">
-                        <li><a href="?blog=all" class="text-rose-600 border-b-2 border-rose-600 pb-4">Terkini</a></li>
+                        <li><a href="?blog=all${webQuery}" class="text-rose-600 border-b-2 border-rose-600 pb-4">Terkini</a></li>
                         <li><a href="#" class="hover:text-rose-600">Nasional</a></li>
                         <li><a href="#" class="hover:text-rose-600">Ekonomi</a></li>
                         <li><a href="#" class="hover:text-rose-600">Teknologi</a></li>
@@ -193,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <footer class="bg-slate-900 text-slate-300 py-12 border-t-4 border-rose-600 mt-10">
                 <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
                     <div><h1 class="text-3xl font-black text-white mb-4 uppercase">${siteName}</h1><p class="text-sm text-slate-400">${tagline}</p></div>
-                    <div><h4 class="text-white font-bold uppercase text-sm mb-4">Akses Cepat</h4><ul class="space-y-2 text-sm text-slate-400"><li><a href="?" class="hover:text-rose-500">Beranda Web</a></li><li><a href="/admin.html" class="hover:text-rose-500">Panel Admin</a></li></ul></div>
+                    <div><h4 class="text-white font-bold uppercase text-sm mb-4">Akses Cepat</h4><ul class="space-y-2 text-sm text-slate-400"><li><a href="${homeQuery}" class="hover:text-rose-500">Beranda Web</a></li><li><a href="/admin.html" class="hover:text-rose-500">Panel Admin</a></li></ul></div>
                     <div><h4 class="text-white font-bold uppercase text-sm mb-4">Ikuti Kami</h4><div class="flex justify-center md:justify-start gap-4"><a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-rose-600"><i data-lucide="instagram" class="w-4 h-4"></i></a><a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-rose-600"><i data-lucide="twitter" class="w-4 h-4"></i></a></div></div>
                 </div>
                 <div class="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-slate-800 text-center text-xs text-slate-500">&copy; ${new Date().getFullYear()} ${siteName} Network. All rights reserved.</div>
@@ -213,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 html += `
                 <section class="grid grid-cols-1 lg:grid-cols-12 gap-2 mb-12">
-                    <a href="?blog=${posts[0][1]}" class="lg:col-span-8 relative rounded-2xl overflow-hidden h-[400px] lg:h-[500px] group block">
+                    <a href="?blog=${posts[0][1]}${webQuery}" class="lg:col-span-8 relative rounded-2xl overflow-hidden h-[400px] lg:h-[500px] group block">
                         <img src="${safeImg(posts[0][4])}" class="w-full h-full object-cover group-hover:scale-105 transition-all">
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
                         <div class="absolute bottom-0 p-6 md:p-10 w-full">
@@ -224,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </a>
                     <div class="lg:col-span-4 flex flex-col gap-2">
                         ${[1, 2].map(i => posts[i] ? `
-                        <a href="?blog=${posts[i][1]}" class="relative rounded-2xl overflow-hidden h-[200px] lg:h-[246px] group block">
+                        <a href="?blog=${posts[i][1]}${webQuery}" class="relative rounded-2xl overflow-hidden h-[200px] lg:h-[246px] group block">
                             <img src="${safeImg(posts[i][4])}" class="w-full h-full object-cover group-hover:scale-105 transition-all">
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
                             <div class="absolute bottom-0 p-5 w-full">
@@ -239,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <h3 class="text-xl font-black border-b-2 border-slate-800 pb-2 mb-6 uppercase tracking-tight">BERITA TERKINI</h3>
                         <div class="space-y-6">
                             ${posts.slice(3, 10).map(p => `
-                            <article class="flex flex-col sm:flex-row gap-5 cursor-pointer border-b border-slate-200 pb-6" onclick="location.href='?blog=${p[1]}'">
+                            <article class="flex flex-col sm:flex-row gap-5 cursor-pointer border-b border-slate-200 pb-6" onclick="location.href='?blog=${p[1]}${webQuery}'">
                                 <img src="${safeImg(p[4])}" class="w-full sm:w-1/3 aspect-[4/3] rounded-xl object-cover">
                                 <div class="w-full sm:w-2/3">
                                     <span class="text-rose-600 font-bold text-[10px] uppercase mb-2 block">${p[3] || 'Info'}</span>
@@ -253,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                             <h3 class="text-lg font-black border-b border-slate-200 pb-3 mb-5 uppercase">TERPOPULER</h3>
                             <div class="space-y-5">
-                                ${popular.map((p, idx) => `<a href="?blog=${p[1]}" class="flex gap-4 group">
+                                ${popular.map((p, idx) => `<a href="?blog=${p[1]}${webQuery}" class="flex gap-4 group">
                                     <div class="text-4xl font-black text-slate-200 group-hover:text-rose-500">${idx+1}</div>
                                     <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4><span class="text-[10px] text-slate-400 uppercase">${p[3]||'Nasional'}</span></div>
                                 </a>`).join('')}
@@ -267,9 +268,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // ===============================================
-        // DISTRIBUSI HALAMAN (ROUTING)
+        // ROUTING SYSTEM DENGAN FINISH LOADING
         // ===============================================
-        if (isHome) {
+        if (isHome && !isPageDetail) {
             if (homePageSlug) {
                 const page = pagesData.find(p => p[1] === homePageSlug);
                 if (page) {
@@ -299,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                             <h3 class="text-lg font-black border-b border-slate-200 pb-3 mb-5 uppercase">BACA JUGA</h3>
                             <div class="space-y-5">
-                                ${popular.map((p, idx) => `<a href="?blog=${p[1]}" class="flex gap-4 group">
+                                ${popular.map((p, idx) => `<a href="?blog=${p[1]}${webQuery}" class="flex gap-4 group">
                                     <div class="text-4xl font-black text-slate-200 group-hover:text-rose-500">${idx+1}</div>
                                     <div><h4 class="font-bold leading-snug group-hover:text-rose-600 line-clamp-2">${p[2]}</h4></div>
                                 </a>`).join('')}
