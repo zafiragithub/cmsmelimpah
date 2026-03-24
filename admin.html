@@ -248,10 +248,9 @@
     </div>
 
     <script>
-        // ⚠️ GANTI DENGAN URL API APPS SCRIPT BOS YANG BARU
+        // ⚠️ GANTI DENGAN URL API APPS SCRIPT BOS
         const API_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec'; 
 
-        // Cache unik per tenant agar data klien tidak saling timpa
         function getCacheKey() {
             return 'cms_admin_data_' + sessionStorage.getItem('tenant_id');
         }
@@ -307,9 +306,9 @@
             } catch (err) { showToast('Error Koneksi API!', 'error'); btn.innerHTML = oriText; btn.disabled = false; } 
         };
 
-        // ======================================================
-        // PERBAIKAN LINK CERDAS (Custom Domain vs Link Preview)
-        // ======================================================
+        // ==========================================
+        // RENDER UI DENGAN SMART LINK CLEANER
+        // ==========================================
         function renderUI(r) {
             cachedPages = r.pages || [];
             cachedPosts = r.posts || [];
@@ -320,20 +319,20 @@
             const tenantId = sessionStorage.getItem('tenant_id'); 
             const customDomain = sessionStorage.getItem('custom_domain'); 
 
-            // Fungsi Pintar Pembuat URL (Bebas Bug 404 & URL Bersih)
+            // FUNGSI PINTAR PEMBUAT URL (BEBAS BUG)
             const makeUrl = (type, slug) => {
-                if (customDomain && customDomain.includes('.')) {
-                    // JIKA KLIEN SUDAH PUNYA DOMAIN: Link super bersih tanpa embel-embel ?web=
-                    if (type === 'page') return `https://${customDomain}/${slug}`;
-                    if (type === 'post') return `https://${customDomain}/?blog=${slug}`;
+                // Pastikan benar-benar memakai HTTPS bersih kalau custom domain aktif
+                if (customDomain && customDomain.trim() !== '') {
+                    let cleanDomain = customDomain.replace(/^https?:\/\//, ''); // buang http:// kalau ada
+                    if (type === 'page') return `https://${cleanDomain}/${slug}`;
+                    if (type === 'post') return `https://${cleanDomain}/?blog=${slug}`;
                 } else {
-                    // JIKA KLIEN BELUM PUNYA DOMAIN: Pakai parameter agar aman saat di-share
-                    if (type === 'page') return `/?page=${slug}&web=${tenantId}`;
+                    // Hanya pakai ?web= kalau klien murni belum punya domain
+                    if (type === 'page') return `/${slug}?web=${tenantId}`;
                     if (type === 'post') return `/?blog=${slug}&web=${tenantId}`;
                 }
             };
             
-            // Render Tabel Halaman Statis
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
@@ -346,7 +345,6 @@
                 </td>
             </tr>`).join('');
 
-            // Render Tabel Artikel/Blog
             document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
@@ -367,16 +365,16 @@
             document.getElementById('set-ik-pub').value = IK_PUB = s.ik_public_key || ''; 
             document.getElementById('set-ik-end').value = s.ik_endpoint || ''; 
             
-            document.getElementById('customDomainInput').value = sessionStorage.getItem('custom_domain') || '';
+            document.getElementById('customDomainInput').value = customDomain || '';
 
             document.getElementById('set-home-page').innerHTML = '<option value="">-- Portal Berita (Bawaan) --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
             document.getElementById('set-home-page').value = s.home_page || ''; 
             
             lucide.createIcons();
         }
+
         async function init() {
             if(!sessionStorage.getItem('cms_auth')) return;
-            
             const tenantId = sessionStorage.getItem('tenant_id');
             const customDomain = sessionStorage.getItem('custom_domain');
             
@@ -384,9 +382,10 @@
             document.getElementById('admin-main').style.display = 'flex'; 
             document.getElementById('admin-name').innerText = sessionStorage.getItem('cms_name');
             
-            // Update Tombol "Lihat Website" di Sidebar Kiri
-            if (customDomain && customDomain.includes('.')) {
-                document.getElementById('btn-lihat-web').href = `https://${customDomain}`;
+            // TOMBOL SIDEBAR LIHAT WEB CERDAS
+            if (customDomain && customDomain.trim() !== '') {
+                let cleanDomain = customDomain.replace(/^https?:\/\//, '');
+                document.getElementById('btn-lihat-web').href = `https://${cleanDomain}`;
             } else {
                 document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
             }
@@ -403,6 +402,7 @@
                 if(r.status === 'success') { sessionStorage.setItem(getCacheKey(), JSON.stringify(r.data)); renderUI(r.data); } 
             } catch (err) { showToast('Gagal sinkronisasi data', 'warning'); }
         }
+
         function forceSync() { sessionStorage.removeItem(getCacheKey()); showToast('Menyegarkan data...', 'warning'); init(); }
 
         function insertAtCursor(id, val) {
@@ -422,7 +422,6 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function logout() { sessionStorage.clear(); location.reload(); }
 
-        // PERBAIKAN INDEX DI EDIT PAGES & POSTS!
         function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[1]; document.getElementById('pg-title').value = p[2]; document.getElementById('pg-content').value = p[3]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
         async function deletePage(id) { if(!confirm("Yakin hapus halaman?")) return; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', tenant_id: sessionStorage.getItem('tenant_id'), id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} }
         document.getElementById('form-page').onsubmit = async (e) => { 
@@ -441,15 +440,12 @@
             try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-post'); showToast('Artikel Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
         };
 
-        // --- SETTINGS ---
         async function submitSettings(formId, payloadData, msg) { 
             const form = document.getElementById(formId);
             const btn = form.querySelector('button[type="submit"]');
             const oriText = btn.innerHTML;
-            
             btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; 
             btn.disabled = true; lucide.createIcons();
-
             try { 
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', tenant_id: sessionStorage.getItem('tenant_id'), payload: payloadData }) }); 
                 const d = await res.json(); 
@@ -459,54 +455,38 @@
 
         document.getElementById('form-branding').onsubmit = async (e) => { 
             e.preventDefault(); 
-            const p = { 
-                site_name: document.getElementById('set-site-name').value, 
-                site_tagline: document.getElementById('set-site-tagline').value, 
-                site_logo: document.getElementById('set-logo').value, 
-                site_favicon: document.getElementById('set-favicon').value, 
-                home_page: document.getElementById('set-home-page').value 
-            }; 
+            const p = { site_name: document.getElementById('set-site-name').value, site_tagline: document.getElementById('set-site-tagline').value, site_logo: document.getElementById('set-logo').value, site_favicon: document.getElementById('set-favicon').value, home_page: document.getElementById('set-home-page').value }; 
             await submitSettings('form-branding', p, 'Branding & Beranda Disimpan!'); 
         };
 
         document.getElementById('form-sys').onsubmit = async (e) => { 
             e.preventDefault(); 
-            const p = { 
-                ik_public_key: document.getElementById('set-ik-pub').value, 
-                ik_endpoint: document.getElementById('set-ik-end').value 
-            }; 
+            const p = { ik_public_key: document.getElementById('set-ik-pub').value, ik_endpoint: document.getElementById('set-ik-end').value }; 
             await submitSettings('form-sys', p, 'Integrasi Disimpan!'); 
         };
 
-        // FITUR TAMBAH DOMAIN SAAS
         async function saveCustomDomain() {
             const domain = document.getElementById('customDomainInput').value;
             const statusEl = document.getElementById('domainStatus');
             const tenantId = sessionStorage.getItem('tenant_id');
-            
             if(!domain) { alert('Masukkan nama domain terlebih dahulu!'); return; }
-
-            statusEl.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>Menghubungkan ke Cloudflare...';
+            statusEl.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>Menghubungkan...';
             statusEl.className = 'mt-4 text-sm font-bold text-amber-500 block bg-amber-50 p-4 rounded-xl';
             lucide.createIcons();
-
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'add_custom_domain', tenant_id: tenantId, domain: domain })
-                });
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_custom_domain', tenant_id: tenantId, domain: domain }) });
                 const res = await response.json();
-                
                 if(res.status === 'success') {
                     statusEl.innerHTML = '✅ <b>Sukses!</b> ' + res.message;
                     statusEl.className = 'mt-4 text-sm text-emerald-700 block bg-emerald-50 p-4 rounded-xl border border-emerald-100';
                     sessionStorage.setItem('custom_domain', domain); 
+                    forceSync(); // Segarkan data UI otomatis
                 } else {
                     statusEl.innerHTML = '❌ <b>Gagal:</b> ' + res.message;
                     statusEl.className = 'mt-4 text-sm text-red-700 block bg-red-50 p-4 rounded-xl border border-red-100';
                 }
             } catch(e) {
-                statusEl.innerHTML = '❌ Terjadi kesalahan saat menghubungkan server.';
+                statusEl.innerHTML = '❌ Kesalahan saat menghubungkan server.';
                 statusEl.className = 'mt-4 text-sm font-bold text-red-600 block';
             }
         }
