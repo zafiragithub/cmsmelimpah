@@ -309,6 +309,9 @@
         // ==========================================
         // RENDER UI DENGAN SMART LINK CLEANER
         // ==========================================
+        // ======================================================
+        // PERBAIKAN LINK CERDAS TINGKAT DEWA (Anti-Bocor)
+        // ======================================================
         function renderUI(r) {
             cachedPages = r.pages || [];
             cachedPosts = r.posts || [];
@@ -318,21 +321,31 @@
             
             const tenantId = sessionStorage.getItem('tenant_id'); 
             const customDomain = sessionStorage.getItem('custom_domain'); 
+            const currentHost = window.location.hostname; // Cek admin dibuka dari mana
 
-            // FUNGSI PINTAR PEMBUAT URL (BEBAS BUG)
+            // FUNGSI PINTAR PEMBUAT URL (SUPER BULLETPROOF)
             const makeUrl = (type, slug) => {
-                // Pastikan benar-benar memakai HTTPS bersih kalau custom domain aktif
-                if (customDomain && customDomain.trim() !== '') {
-                    let cleanDomain = customDomain.replace(/^https?:\/\//, ''); // buang http:// kalau ada
+                const isAlreadyCustomHost = !currentHost.includes('pages.dev') && !currentHost.includes('localhost') && !currentHost.includes('127.0.0.1');
+
+                // SKENARIO 1: Panel Admin dibuka langsung dari Custom Domain (demo.melimpah.biz.id)
+                if (isAlreadyCustomHost) {
+                    if (type === 'page') return `/${slug}`;
+                    if (type === 'post') return `/?blog=${slug}`;
+                } 
+                // SKENARIO 2: Panel Admin dibuka dari pages.dev, TAPI klien sudah isi Custom Domain
+                else if (customDomain && customDomain.trim() !== '') {
+                    let cleanDomain = customDomain.replace(/^https?:\/\//, '');
                     if (type === 'page') return `https://${cleanDomain}/${slug}`;
                     if (type === 'post') return `https://${cleanDomain}/?blog=${slug}`;
-                } else {
-                    // Hanya pakai ?web= kalau klien murni belum punya domain
+                } 
+                // SKENARIO 3: Klien benar-benar belum punya domain (Pakai Preview bawaan)
+                else {
                     if (type === 'page') return `/${slug}?web=${tenantId}`;
                     if (type === 'post') return `/?blog=${slug}&web=${tenantId}`;
                 }
             };
             
+            // Render Tabel Halaman Statis
             document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
@@ -345,6 +358,7 @@
                 </td>
             </tr>`).join('');
 
+            // Render Tabel Artikel/Blog
             document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
             <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
                 <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
@@ -372,7 +386,6 @@
             
             lucide.createIcons();
         }
-
         async function init() {
             if(!sessionStorage.getItem('cms_auth')) return;
             const tenantId = sessionStorage.getItem('tenant_id');
