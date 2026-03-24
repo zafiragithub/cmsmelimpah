@@ -108,6 +108,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
+            
+            // TRIK SULAP: Hapus tulisan ?web= dari Address Bar agar terlihat profesional!
+            if (urlParams.has('web')) {
+                urlParams.delete('web');
+                const newQuery = urlParams.toString() ? '?' + urlParams.toString() : '';
+                const cleanUrl = window.location.pathname + newQuery;
+                window.history.replaceState(null, '', cleanUrl); // Menghapus tanpa reload!
+            }
         }
 
         const webQuery = previewSite ? '&web=' + previewSite : '';
