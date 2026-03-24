@@ -307,7 +307,9 @@
             } catch (err) { showToast('Error Koneksi API!', 'error'); btn.innerHTML = oriText; btn.disabled = false; } 
         };
 
-        // PERBAIKAN LINK CERDAS (Custom Domain vs Preview)
+        // ======================================================
+        // PERBAIKAN LINK CERDAS (Custom Domain vs Link Preview)
+        // ======================================================
         function renderUI(r) {
             cachedPages = r.pages || [];
             cachedPosts = r.posts || [];
@@ -318,15 +320,15 @@
             const tenantId = sessionStorage.getItem('tenant_id'); 
             const customDomain = sessionStorage.getItem('custom_domain'); 
 
-            // Fungsi Pintar Pembuat URL
+            // Fungsi Pintar Pembuat URL (Bebas Bug 404 & URL Bersih)
             const makeUrl = (type, slug) => {
                 if (customDomain && customDomain.includes('.')) {
-                    // Jika klien SUDAH punya domain (.com / .id), link langsung bersih!
+                    // JIKA KLIEN SUDAH PUNYA DOMAIN: Link super bersih tanpa embel-embel ?web=
                     if (type === 'page') return `https://${customDomain}/${slug}`;
                     if (type === 'post') return `https://${customDomain}/?blog=${slug}`;
                 } else {
-                    // Jika BELUM punya domain, pakai link bawaan pages.dev + parameter ID
-                    if (type === 'page') return `/${slug}?web=${tenantId}`;
+                    // JIKA KLIEN BELUM PUNYA DOMAIN: Pakai parameter agar aman saat di-share
+                    if (type === 'page') return `/?page=${slug}&web=${tenantId}`;
                     if (type === 'post') return `/?blog=${slug}&web=${tenantId}`;
                 }
             };
