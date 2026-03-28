@@ -1,6 +1,7 @@
-// engine.js - Circular 0-100% Loader & Anti-Crash Routing
+// engine.js - Circular 0-100% Loader, Anti-Crash Routing & Smart Cache
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
+const CACHE_TTL = 5 * 60 * 1000; // Cache kedaluwarsa dalam 5 Menit (Refresh otomatis)
 
 document.addEventListener('DOMContentLoaded', async () => {
     const spinner = document.getElementById('loading-spinner');
@@ -27,7 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 2. FUNGSI PENYELESAIAN LOADING
-    // (Ditambahkan parameter 'isStandalone' agar mesin tahu ini Halaman Statis atau Artikel Biasa)
     function finishLoading(html, isStandalone = false) {
         clearInterval(progressInterval);
         updateProgressUI(100); 
@@ -41,11 +41,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 200); 
     }
 
-    // 3. FUNGSI MENGGAMBAR KANVAS (SMART RENDER)
+    // 3. FUNGSI MENGGAMBAR KANVAS (SMART RENDER DENGAN IFRAME AUTO-RESIZE)
     function renderHTML(htmlContent, isStandalone) {
         if(!htmlContent) { forceError(); return; }
         
-        // HANYA gunakan iframe JIKA ini adalah Halaman Statis (Landing Page) DAN berisi Full HTML
         const useIframe = isStandalone && (htmlContent.match(/<html/i) || htmlContent.match(/<!DOCTYPE html>/i));
 
         if (useIframe) {
@@ -56,15 +55,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             appCanvas.innerHTML = ''; 
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
-            iframe.style.height = '100vh'; 
+            iframe.style.height = '100vh'; // Default height
             iframe.style.border = 'none';
+            iframe.style.overflow = 'hidden';
             appCanvas.appendChild(iframe);
             
             iframe.contentWindow.document.open();
             iframe.contentWindow.document.write(iframeHtml);
             iframe.contentWindow.document.close();
+
+            // Auto-resize Iframe untuk menghindari double scrollbar
+            iframe.onload = () => {
+                try {
+                    const doc = iframe.contentWindow.document;
+                    const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+                    iframe.style.height = height + 'px';
+                } catch (e) {
+                    console.warn("Iframe resize dicegah oleh kebijakan Cross-Origin.");
+                }
+            };
         } else {
-            // Untuk Portal Berita dan Artikel, langsung render agar CSS Tailwind terbaca sempurna!
             appCanvas.innerHTML = htmlContent;
             initIcons();
         }
@@ -74,8 +84,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initIcons() {
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        else setTimeout(initIcons, 50);
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            setTimeout(initIcons, 50);
+        }
     }
 
     function forceError() {
@@ -88,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ===============================================
-    // JANTUNG UTAMA SISTEM SAAS
+    // JANTUNG UTAMA SISTEM MULTI-AKUN SAAS
     // ===============================================
     try {
         const currentPath = window.location.pathname.replace(/\/$/, '');
@@ -99,28 +112,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         let blogParam = urlParams.get('blog'); 
         let pageParam = urlParams.get('page'); 
 
+        // Manajemen Sesi Preview Web
         if (previewSite) {
             sessionStorage.setItem('preview_web', previewSite);
         } else {
             previewSite = sessionStorage.getItem('preview_web');
         }
 
+        // Keamanan: Kunci preview hanya untuk environment development/staging
         if (!currentDomain.includes('pages.dev') && !currentDomain.includes('localhost') && !currentDomain.includes('127.0.0.1')) {
             sessionStorage.removeItem('preview_web');
             previewSite = null;
             
-            // TRIK SULAP: Hapus tulisan ?web= dari Address Bar agar terlihat profesional!
             if (urlParams.has('web')) {
                 urlParams.delete('web');
                 const newQuery = urlParams.toString() ? '?' + urlParams.toString() : '';
                 const cleanUrl = window.location.pathname + newQuery;
-                window.history.replaceState(null, '', cleanUrl); // Menghapus tanpa reload!
+                window.history.replaceState(null, '', cleanUrl);
             }
         }
 
         const webQuery = previewSite ? '&web=' + previewSite : '';
         const homeQuery = previewSite ? '?web=' + previewSite : '';
 
+        // Penentuan Rute (Routing)
         let targetRoute = 'home';
         let targetSlug = '';
 
@@ -145,20 +160,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let res;
         const cacheKey = 'saas_data_' + (previewSite || currentDomain);
-        const cachedData = sessionStorage.getItem(cacheKey);
+        const cachedString = sessionStorage.getItem(cacheKey);
+        let useCache = false;
 
-        if (cachedData) {
-            simProgress = 95; 
-            res = JSON.parse(cachedData); 
-        } else {
-            const response = await fetch(fetchUrl);
-            res = await response.json(); 
-            if (res.status === 'success') {
-                sessionStorage.setItem(cacheKey, JSON.stringify(res));
+        // Validasi Caching (Mencegah Stale Data)
+        if (cachedString) {
+            try {
+                const cacheData = JSON.parse(cachedString);
+                if (Date.now() - cacheData.timestamp < CACHE_TTL) {
+                    res = cacheData.payload;
+                    useCache = true;
+                    simProgress = 95;
+                }
+            } catch (e) {
+                console.warn("Cache korup, memuat ulang data.");
             }
         }
 
-        if (res.status !== 'success') throw new Error('Data tidak ditemukan');
+        // Fetch dari GAS (Dengan penanganan Error HTML vs JSON)
+        if (!useCache) {
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error('Jaringan bermasalah atau API menolak koneksi.');
+            
+            const textResponse = await response.text();
+            try {
+                res = JSON.parse(textResponse);
+                if (res.status === 'success') {
+                    const cachePackage = { timestamp: Date.now(), payload: res };
+                    sessionStorage.setItem(cacheKey, JSON.stringify(cachePackage));
+                }
+            } catch (err) {
+                console.error("Endpoint tidak mengembalikan JSON valid. Kemungkinan limit GAS tercapai.");
+                throw new Error('Invalid JSON dari server');
+            }
+        }
+
+        if (!res || res.status !== 'success') throw new Error('Data CMS tidak ditemukan');
 
         const settingsData = res.data.settings || {};
         const postsData = res.data.posts || [];
@@ -177,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const todayStr = new Date().toLocaleDateString('id-ID', dateOptions);
 
+        // Komponen UI (Template)
         const htmlTop = `
             <style>.headline-card:hover img { transform: scale(1.05); } .headline-card img { transition: transform 0.5s ease; }</style>
             <div class="bg-slate-900 text-slate-300 text-xs py-2 hidden md:block">
@@ -230,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let html = htmlTop + `<main class="max-w-7xl mx-auto px-4 py-8 text-slate-800">`;
 
             if (posts.length === 0) {
-                html += `<div class="text-center py-20"><p class="text-slate-500 text-xl italic">Belum ada berita.</p></div>`;
+                html += `<div class="text-center py-20"><p class="text-slate-500 text-xl italic">Belum ada berita yang dipublikasikan.</p></div>`;
             } else {
                 html += `
                 <section class="grid grid-cols-1 lg:grid-cols-12 gap-2 mb-12">
@@ -287,26 +325,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             return html;
         }
 
-        // EKSEKUSI TAMPILAN
+        // ===============================================
+        // EKSEKUSI TAMPILAN BERDASARKAN RUTE
+        // ===============================================
         if (targetRoute === 'home') {
             if (s.home_page) {
                 const page = pagesData.find(p => p[1] === s.home_page);
                 if (page) {
                     document.title = `${page[2]} - ${siteName}`;
-                    // Parameter TRUE: Boleh masuk iFrame karena ini Halaman Statis
                     finishLoading(page[3], true);
-                } else { finishLoading(buildPortalHtml(), false); }
-            } else { finishLoading(buildPortalHtml(), false); }
+                } else { 
+                    finishLoading(buildPortalHtml(), false); 
+                }
+            } else { 
+                finishLoading(buildPortalHtml(), false); 
+            }
             
         } else if (targetRoute === 'blog_list') {
-            // Parameter FALSE: DILARANG masuk iFrame (Portal Berita)
             finishLoading(buildPortalHtml(), false);
             
         } else if (targetRoute === 'post_detail') {
             const post = postsData.find(p => p[1] === targetSlug);
             if (post) {
                 document.title = `${post[2]} - ${siteName}`;
-                let popular = postsData.slice(0, 5);
+                let popular = postsData.slice(0, 5); // Fallback data
                 let html = htmlTop + `
                 <main class="max-w-7xl mx-auto px-4 py-8"><div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <article class="lg:col-span-8 bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -329,21 +371,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </aside>
                 </div></main>` + htmlFooter;
                 
-                // Parameter FALSE: DILARANG masuk iFrame (Artikel Berita)
                 finishLoading(html, false);
-            } else { forceError(); }
+            } else { 
+                forceError(); 
+            }
             
         } else if (targetRoute === 'page_detail') {
             const page = pagesData.find(p => p[1] === targetSlug);
             if (page) { 
                 document.title = `${page[2]} - ${siteName}`;
-                // Parameter TRUE: Boleh masuk iFrame karena ini Halaman Statis
                 finishLoading(page[3], true); 
-            } else { forceError(); }
+            } else { 
+                forceError(); 
+            }
         }
 
     } catch (error) { 
-        console.error("Error Sistem:", error); 
+        console.error("Critical System Error:", error.message); 
         forceError(); 
     }
 });
