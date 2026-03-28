@@ -326,4 +326,262 @@
             
             const tenantId = sessionStorage.getItem('tenant_id'); 
             const customDomain = sessionStorage.getItem('custom_domain'); 
-            const currentHost
+            const currentHost = window.location.hostname; 
+
+            const makeUrl = (type, slug) => {
+                const isAlreadyCustomHost = !currentHost.includes('pages.dev') && !currentHost.includes('localhost') && !currentHost.includes('127.0.0.1');
+
+                if (isAlreadyCustomHost) {
+                    if (type === 'page') return `/${slug}`;
+                    if (type === 'post') return `/?blog=${slug}`;
+                } 
+                else if (customDomain && customDomain.trim() !== '') {
+                    let cleanDomain = customDomain.replace(/^https?:\/\//, '');
+                    if (type === 'page') return `https://${cleanDomain}/${slug}`;
+                    if (type === 'post') return `https://${cleanDomain}/?blog=${slug}`;
+                } 
+                else {
+                    if (type === 'page') return `/${slug}?web=${tenantId}`;
+                    if (type === 'post') return `/?blog=${slug}&web=${tenantId}`;
+                }
+            };
+            
+            document.getElementById('list-pages').innerHTML = cachedPages.map(p => `
+            <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
+                <td class="p-4 md:p-6 font-black text-slate-800 truncate">${p[2]}</td>
+                <td class="p-4 md:p-6 font-mono text-slate-500 truncate">/${p[1]}</td>
+                <td class="p-4 md:p-6 text-slate-500">${p[4] || '-'}</td>
+                <td class="p-4 md:p-6 text-right flex justify-end gap-2">
+                    <button onclick="window.open('${makeUrl('page', p[1])}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="editPage('${p[0]}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button onclick="deletePage('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </td>
+            </tr>`).join('');
+
+            document.getElementById('list-posts').innerHTML = cachedPosts.map(p => `
+            <tr class="hover:bg-slate-50 border-b border-slate-50 text-[11px] md:text-sm group">
+                <td class="p-4 md:p-6 font-black text-slate-800"><div class="line-clamp-2">${p[2]}</div><div class="text-[9px] font-mono text-slate-400 mt-1">/blog/${p[1]}</div></td>
+                <td class="p-4 md:p-6 font-bold text-emerald-600"><span class="bg-emerald-50 px-3 py-1 rounded-full text-[10px]">${p[3]||'-'}</span></td>
+                <td class="p-4 md:p-6 text-slate-500 text-xs">${p[6] || '-'}</td>
+                <td class="p-4 md:p-6 text-right flex justify-end gap-2">
+                    <button onclick="window.open('${makeUrl('post', p[1])}', '_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+                    <button onclick="editPost('${p[0]}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button onclick="deletePost('${p[0]}')" class="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white p-2.5 rounded-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </td>
+            </tr>`).join('');
+
+            const s = currentSettings;
+            document.getElementById('set-site-name').value = s.site_name || ''; 
+            document.getElementById('set-site-tagline').value = s.site_tagline || ''; 
+            document.getElementById('set-logo').value = s.site_logo || ''; 
+            document.getElementById('set-favicon').value = s.site_favicon || ''; 
+            document.getElementById('set-imgbb-key').value = s.imgbb_key || ''; // ✅ Integrasi ImgBB
+            
+            document.getElementById('customDomainInput').value = customDomain || '';
+
+            document.getElementById('set-home-page').innerHTML = '<option value="">-- Portal Berita (Bawaan) --</option>' + cachedPages.map(p => `<option value="${p[1]}">${p[2]} (/${p[1]})</option>`).join('');
+            document.getElementById('set-home-page').value = s.home_page || ''; 
+            
+            lucide.createIcons();
+        }
+
+        async function init() {
+            if(!sessionStorage.getItem('cms_auth')) return;
+            const tenantId = sessionStorage.getItem('tenant_id');
+            const customDomain = sessionStorage.getItem('custom_domain');
+            
+            document.getElementById('login-overlay').style.display = 'none'; 
+            document.getElementById('admin-main').style.display = 'flex'; 
+            document.getElementById('admin-name').innerText = sessionStorage.getItem('cms_name');
+            
+            if (customDomain && customDomain.trim() !== '') {
+                let cleanDomain = customDomain.replace(/^https?:\/\//, '');
+                document.getElementById('btn-lihat-web').href = `https://${cleanDomain}`;
+            } else {
+                document.getElementById('btn-lihat-web').href = `/?web=${tenantId}`;
+            }
+            
+            const cachedDataStr = sessionStorage.getItem(getCacheKey()); 
+            if (cachedDataStr) { renderUI(JSON.parse(cachedDataStr)); }
+            
+            try { 
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'get_admin_data', tenant_id: tenantId }) 
+                }); 
+                const r = await res.json(); 
+                if(r.status === 'success') { sessionStorage.setItem(getCacheKey(), JSON.stringify(r.data)); renderUI(r.data); } 
+            } catch (err) { showToast('Gagal sinkronisasi data', 'warning'); }
+        }
+
+        function forceSync() { sessionStorage.removeItem(getCacheKey()); showToast('Menyegarkan data...', 'warning'); init(); }
+
+        function insertAtCursor(id, val) {
+            const f = document.getElementById(id);
+            if (f.selectionStart || f.selectionStart === 0) {
+                let s = f.selectionStart, e = f.selectionEnd;
+                f.value = f.value.substring(0, s) + val + f.value.substring(e);
+                f.focus(); f.selectionStart = s + val.length; f.selectionEnd = s + val.length;
+            } else { f.value += val; f.focus(); }
+        }
+
+        document.getElementById('pg-title').addEventListener('keyup', function() { if(document.getElementById('pg-is-edit').value === 'false') document.getElementById('pg-slug').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''); });
+        document.getElementById('pt-title').addEventListener('keyup', function() { if(document.getElementById('pt-is-edit').value === 'false') document.getElementById('pt-slug').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''); });
+
+        function openPageModal() { document.getElementById('form-page').reset(); document.getElementById('pg-is-edit').value = 'false'; document.getElementById('modal-page').classList.remove('hidden'); }
+        function openPostModal() { document.getElementById('form-post').reset(); document.getElementById('pt-is-edit').value = 'false'; document.getElementById('modal-post').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        // ==========================================
+        // SWEETALERT LOGOUT & DELETE
+        // ==========================================
+        function logout() { 
+            Swal.fire({ title: 'Keluar Panel?', text: "Sesi Anda akan diakhiri.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#4f46e5', cancelButtonColor: '#94a3b8', confirmButtonText: 'Ya, Keluar' }).then((result) => {
+                if (result.isConfirmed) { sessionStorage.clear(); location.reload(); }
+            });
+        }
+
+        function editPage(id) { const p = cachedPages.find(x => x[0] === id); if(!p) return; document.getElementById('pg-id').value = p[0]; document.getElementById('pg-slug').value = p[1]; document.getElementById('pg-title').value = p[2]; document.getElementById('pg-content').value = p[3]; document.getElementById('pg-is-edit').value = 'true'; document.getElementById('modal-page').classList.remove('hidden'); }
+        
+        async function deletePage(id) { 
+            const confirm = await Swal.fire({ title: 'Hapus Halaman?', text: "Tindakan ini permanen!", icon: 'error', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8', confirmButtonText: 'Hapus!' });
+            if(!confirm.isConfirmed) return; 
+            
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_page', tenant_id: sessionStorage.getItem('tenant_id'), id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} 
+        }
+
+        document.getElementById('form-page').onsubmit = async (e) => { 
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
+            let id = document.getElementById('pg-id').value || 'PG-' + Math.floor(Math.random()*10000);
+            const p = { action: 'save_page', tenant_id: sessionStorage.getItem('tenant_id'), id: id, slug: document.getElementById('pg-slug').value, title: document.getElementById('pg-title').value, content: document.getElementById('pg-content').value, is_edit: document.getElementById('pg-is-edit').value === 'true' }; 
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-page'); showToast('Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
+        };
+
+        function editPost(id) { const p = cachedPosts.find(x => x[0] === id); if(!p) return; document.getElementById('pt-id').value = p[0]; document.getElementById('pt-slug').value = p[1]; document.getElementById('pt-title').value = p[2]; document.getElementById('pt-category').value = p[3]; document.getElementById('pt-image').value = p[4]; document.getElementById('pt-content').value = p[5]; document.getElementById('pt-is-edit').value = 'true'; document.getElementById('modal-post').classList.remove('hidden'); }
+        
+        async function deletePost(id) { 
+            const confirm = await Swal.fire({ title: 'Hapus Artikel?', text: "Artikel akan hilang permanen!", icon: 'error', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8', confirmButtonText: 'Hapus!' });
+            if(!confirm.isConfirmed) return; 
+            
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'delete_post', tenant_id: sessionStorage.getItem('tenant_id'), id: id}) }); const d = await res.json(); if(d.status === 'success') { showToast('Terhapus!', 'success'); forceSync(); } } catch(e) {} 
+        }
+
+        document.getElementById('form-post').onsubmit = async (e) => { 
+            e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); const ori = btn.innerHTML; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; btn.disabled = true; lucide.createIcons();
+            let id = document.getElementById('pt-id').value || 'PT-' + Math.floor(Math.random()*10000);
+            const p = { action: 'save_post', tenant_id: sessionStorage.getItem('tenant_id'), id: id, slug: document.getElementById('pt-slug').value, title: document.getElementById('pt-title').value, category: document.getElementById('pt-category').value, image: document.getElementById('pt-image').value, content: document.getElementById('pt-content').value, is_edit: document.getElementById('pt-is-edit').value === 'true' }; 
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); const d = await res.json(); if(d.status === 'success') { closeModal('modal-post'); showToast('Artikel Tersimpan!', 'success'); forceSync(); } } catch(err) {} finally { btn.innerHTML = ori; btn.disabled = false; }
+        };
+
+        // ==========================================
+        // FIX BUG: PENGGABUNGAN DATA (PAYLOAD MERGE)
+        // ==========================================
+        async function submitSettings(formId, payloadData, msg) { 
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button[type="submit"]');
+            const oriText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>PROSES...'; 
+            btn.disabled = true; lucide.createIcons();
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_settings', tenant_id: sessionStorage.getItem('tenant_id'), payload: payloadData }) }); 
+                const d = await res.json(); 
+                if(d.status === 'success') { showToast(msg, 'success'); forceSync(); } else { showToast('Gagal menyimpan pengaturan', 'error'); }
+            } catch(err) { showToast('Koneksi terputus', 'error'); } finally { btn.innerHTML = oriText; btn.disabled = false; } 
+        }
+
+        document.getElementById('form-branding').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            // ✅ Menggunakan ...currentSettings agar key imgbb_key tidak terhapus saat simpan Branding
+            const p = { 
+                ...currentSettings, 
+                site_name: document.getElementById('set-site-name').value, 
+                site_tagline: document.getElementById('set-site-tagline').value, 
+                site_logo: document.getElementById('set-logo').value, 
+                site_favicon: document.getElementById('set-favicon').value, 
+                home_page: document.getElementById('set-home-page').value 
+            }; 
+            await submitSettings('form-branding', p, 'Branding & Beranda Disimpan!'); 
+        };
+
+        document.getElementById('form-sys').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            // ✅ Menggunakan ...currentSettings agar form Branding tidak terhapus saat simpan Integrasi
+            const p = { 
+                ...currentSettings,
+                imgbb_key: document.getElementById('set-imgbb-key').value 
+            }; 
+            await submitSettings('form-sys', p, 'Integrasi Disimpan!'); 
+        };
+
+        // ==========================================
+        // FUNGSI UPLOAD MEDIA & COPY LINK YANG HILANG
+        // ==========================================
+        async function uploadMedia() {
+            const fileInput = document.getElementById('media-file');
+            if(!fileInput.files[0]) return showToast('Pilih gambar dulu!', 'warning');
+            
+            const btn = document.getElementById('btn-upload');
+            const ori = btn.innerHTML;
+            btn.innerHTML = 'UPLOADING...'; btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            
+            try {
+                // Menggunakan ImgBB API Key dari Settings (Atau kunci default cadangan jika kosong)
+                const apiKey = currentSettings.imgbb_key || '8d3bf7379d4bd4fb2636a8e32560824b'; 
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if(data.success) {
+                    document.getElementById('media-url-res').value = data.data.url;
+                    document.getElementById('media-res-box').classList.remove('hidden');
+                    showToast('Gambar berhasil diupload!', 'success');
+                    fileInput.value = ''; // Reset input
+                } else { showToast('Gagal upload dari server CDN', 'error'); }
+            } catch(e) { 
+                showToast('Koneksi gagal, pastikan ada internet', 'error'); 
+            } finally { 
+                btn.innerHTML = ori; btn.disabled = false; 
+            }
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("media-url-res");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // Untuk HP
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                showToast("Link disalin ke clipboard!", "success");
+            });
+        }
+
+        async function saveCustomDomain() {
+            const domain = document.getElementById('customDomainInput').value;
+            const statusEl = document.getElementById('domainStatus');
+            const tenantId = sessionStorage.getItem('tenant_id');
+            if(!domain) { alert('Masukkan nama domain terlebih dahulu!'); return; }
+            statusEl.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block align-middle mr-2"></i>Menghubungkan...';
+            statusEl.className = 'mt-4 text-sm font-bold text-amber-500 block bg-amber-50 p-4 rounded-xl';
+            lucide.createIcons();
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add_custom_domain', tenant_id: tenantId, domain: domain }) });
+                const res = await response.json();
+                if(res.status === 'success') {
+                    statusEl.innerHTML = '✅ <b>Sukses!</b> ' + res.message;
+                    statusEl.className = 'mt-4 text-sm text-emerald-700 block bg-emerald-50 p-4 rounded-xl border border-emerald-100';
+                    sessionStorage.setItem('custom_domain', domain); 
+                    forceSync(); 
+                } else {
+                    statusEl.innerHTML = '❌ <b>Gagal:</b> ' + res.message;
+                    statusEl.className = 'mt-4 text-sm text-red-700 block bg-red-50 p-4 rounded-xl border border-red-100';
+                }
+            } catch(e) {
+                statusEl.innerHTML = '❌ Kesalahan saat menghubungkan server.';
+                statusEl.className = 'mt-4 text-sm font-bold text-red-600 block';
+            }
+        }
+
+        window.onload = () => { lucide.createIcons(); if(sessionStorage.getItem('cms_auth')) init(); };
+    </script>
+</body>
+</html>
