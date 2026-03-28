@@ -1,6 +1,6 @@
 // engine.js - Circular 0-100% Loader, Anti-Crash Routing & Smart Cache
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR5CgdfZ-1pzFxcK1bZIGWQoHqUnrHNG93D2Rwgw5hgZ4D6GSi7JmjQkjq9k2jlqcl/exec';
+const SCRIPT_URL = '/api';
 const CACHE_TTL = 5 * 60 * 1000; // Cache kedaluwarsa dalam 5 Menit (Refresh otomatis)
 
 document.addEventListener('DOMContentLoaded', async () => {
